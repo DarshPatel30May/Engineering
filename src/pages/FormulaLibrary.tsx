@@ -78,7 +78,7 @@ function Detail({ id }: { id: string }) {
           <div className="info-block"><strong>Category:</strong> {f.source}</div>
         </div>
       </div>
-      <FormulaCalculator formulaId={id} />
+      <FormulaCalculator key={id} formulaId={id} />
     </div>
   );
 }
@@ -88,7 +88,7 @@ export function FormulaLibrary({ selected }: { selected?: string }) {
   const [mod, setMod] = useState<ModuleId | 'all'>('all');
   const [view, setView] = useState<'cards' | 'matrix'>('cards');
   const results = useMemo(() => searchFormulas(q, mod), [q, mod]);
-  if (selected && FORMULAS.some((f) => f.id === selected)) return <Detail id={selected} />;
+  if (selected && FORMULAS.some((f) => f.id === selected)) return <Detail key={selected} id={selected} />;
   return (
     <div className="stack">
       <div className="panel">

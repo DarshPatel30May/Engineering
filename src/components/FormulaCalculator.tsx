@@ -33,7 +33,8 @@ function exampleValues(id: string): Record<string, QValue> {
 export function FormulaCalculator({ formulaId, initialUnknown }: { formulaId: string; initialUnknown?: string }) {
   const f = getFormula(formulaId);
   const { sf } = useSettings();
-  const [unknown, setUnknown] = useState<string>(initialUnknown ?? f.vars[0].key);
+  const [unknownState, setUnknown] = useState<string>(initialUnknown ?? f.vars[0].key);
+  const unknown = f.vars.some((v) => v.key === unknownState) ? unknownState : f.vars[0].key;
   const [vals, setVals] = useState<Record<string, QValue>>(() => blankValues(formulaId));
 
   useEffect(() => {

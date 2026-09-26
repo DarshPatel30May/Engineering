@@ -295,7 +295,7 @@ export function interpret(text: string): Interpretation {
   // antenna type
   if (targets.includes('antennaLength')) notes.push(flags.quarterWave ? 'Quarter-wave antenna: L = λ/4.' : 'Assuming a half-wave dipole: L = λ/2.');
 
-  for (const q of quantities) {
+  for (const q of special ? [] : quantities) {
     if (!q.concept) ambiguities.push(`Could not decide what ${q.numText}${q.unit ? ' ' + q.unit : ''} represents — assign it below.`);
     else if (q.confidence === 'low') ambiguities.push(`${q.numText}${q.unit ? ' ' + q.unit : ''} was read as ${getConcept(q.concept)?.name.toLowerCase()} (low confidence) — check it.`);
   }

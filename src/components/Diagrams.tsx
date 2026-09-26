@@ -73,7 +73,7 @@ export function BeamDiagram({ data }: { data: { input: BeamInput; result: BeamRe
                   </>
                 )}
                 <line x1={X(re.x)} x2={X(re.x)} y1={beamY + 48} y2={beamY + 26} className="react" markerEnd="url(#arrowUp)" strokeWidth={2} />
-                <text x={X(re.x)} y={beamY + 60} textAnchor="middle" className="label-strong">{re.label.replace('_', '')} = {fmt(re.value * sc, 3)} {Fu}</text>
+                <text x={X(re.x)} y={beamY + 60} textAnchor={X(re.x) > W - 90 ? 'end' : X(re.x) < 90 ? 'start' : 'middle'} className="label-strong">{re.label.replace('_', '')} = {fmt(re.value * sc, 3)} {Fu}</text>
               </g>
             ))}
           {cant && (
@@ -101,14 +101,14 @@ export function BeamDiagram({ data }: { data: { input: BeamInput; result: BeamRe
               <text key={'d' + x} x={X(x)} y={beamY + 82} textAnchor="middle">{fmt(x, 3)} m</text>
             ))}
           {/* SFD */}
-          <text x={8} y={sfdTop + 12} className="label-strong">SFD ({Fu})</text>
+          <text x={8} y={sfdTop - 6} className="label-strong">Shear force diagram ({Fu})</text>
           <line x1={X(0)} x2={X(L)} y1={Vy(0)} y2={Vy(0)} className="axis" />
           <path d={sfdPath} className="sfd" />
           {r.keyPoints.map((kp, i) => (
             <text key={'v' + i} x={X(kp.x) + 3} y={Vy(kp.V) + (kp.V >= 0 ? -4 : 12)} fontSize={10}>{fmt(kp.V * sc, 3)}</text>
           ))}
           {/* BMD */}
-          <text x={8} y={bmdTop + 12} className="label-strong">BMD ({Mu})</text>
+          <text x={8} y={bmdTop - 6} className="label-strong">Bending moment diagram ({Mu})</text>
           <line x1={X(0)} x2={X(L)} y1={My(0)} y2={My(0)} className="axis" />
           <path d={bmdPath} className="bmd" />
           {r.keyPoints.map((kp, i) =>
