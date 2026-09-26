@@ -71,6 +71,8 @@ export interface FormulaDef {
   checks?: (v: Record<string, number>) => Issue[];
   /** ordering preference in the chain solver (higher first). identities are low. */
   priority?: number;
+  /** explicit cost in the chain solver (default ≈ 1 per step) — raise to prefer multi-step HSC working */
+  chainCost?: number;
   /** only use in the automatic chain solver when one of these modules is detected */
   contextOnly?: ModuleId[];
   /** beyond core HSC scope but occasionally useful */

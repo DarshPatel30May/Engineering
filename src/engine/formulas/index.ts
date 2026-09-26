@@ -58,3 +58,13 @@ export function searchFormulas(query: string, module?: ModuleId | 'all'): Formul
     .sort((a, b) => b.score - a.score);
   return scored.map((x) => x.f);
 }
+
+/** Update the default value of g used by every formula (HSC papers accept 9.8 or 9.81 m/s²). */
+export function setGravity(g: number) {
+  for (const f of FORMULAS) for (const v of f.vars) if (v.concept === 'g') v.constant = g;
+}
+
+export function currentGravity(): number {
+  for (const f of FORMULAS) for (const v of f.vars) if (v.concept === 'g' && v.constant !== undefined) return v.constant;
+  return 9.81;
+}

@@ -116,6 +116,19 @@ function occurrences(textLower: string, kw: string): number[] {
   return out;
 }
 
+/** Concepts that only make sense when certain wording is present. */
+const CONTEXT_REQUIRED: Record<string, RegExp> = {
+  load: /effort|pulley|lever|machine|jack|winch|mechanical advantage|velocity ratio|block and tackle|hoist|wheel and axle|screw/,
+  effort: /effort|pulley|lever|machine|jack|winch|mechanical advantage|velocity ratio|block and tackle|hoist|wheel and axle|screw/,
+  F1: /piston|hydraulic|cylinder|pascal/,
+  F2: /piston|hydraulic|cylinder|pascal/,
+  Ffail: /fail|break|ultimate load|factor of safety|safe/,
+  Fw: /working load|safe|factor of safety/,
+  Lift: /lift|aircraft|wing|glid|flight/,
+  Th: /thrust|aircraft|engine|jet|propel/,
+  Drag: /drag|aircraft|air resistance|aerodynamic/,
+};
+
 function scoreConcept(q: RawQuantity, c: Concept, textLower: string, all: RawQuantity[]): number {
   let best = 0;
   for (const kw of c.keywords) {
@@ -145,6 +158,8 @@ function scoreConcept(q: RawQuantity, c: Concept, textLower: string, all: RawQua
     else if (c.symbols.some((s) => s.toLowerCase() === q.symbol!.toLowerCase())) best += 2;
   }
   if (best > 0) best += unitBoost(q, c);
+  const req = CONTEXT_REQUIRED[c.id];
+  if (req && !req.test(textLower)) best *= 0.3;
   const kind = getQuantity(c.quantity).id;
   if (DEFAULT_CONCEPT[kind] === c.id) best += 0.15;
   return best;

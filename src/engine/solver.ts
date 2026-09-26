@@ -116,10 +116,10 @@ export interface RawInput {
 export function conversionLatex(vd: VarDef, value: number, unit: string, valueSI: number): string | null {
   const k = getQuantity(vd.quantity);
   if (k.angle) return null;
-  if (k.percent && unit === '%') return `${vd.latex} = ${fmtLatex(value, 6)}\\% = ${fmtLatex(valueSI, 6)}`;
+  if (k.percent && unit === '%') return `${vd.latex} = ${fmtLatex(value, 12)}\\% = ${fmtLatex(valueSI, 12)}`;
   const siUnit = k.si;
   if (!unit || unit === siUnit || unit === 'dB') return null;
-  return `${vd.latex} = ${qtyLatex(value, unit, 6)} = ${fmtLatex(valueSI, 4)}\\ ${k.siLatex}`;
+  return `${vd.latex} = ${qtyLatex(value, unit, 12)} = ${fmtLatex(valueSI, 12)}\\ ${k.siLatex}`;
 }
 
 /** Solve one formula for one unknown with user inputs (any units). */

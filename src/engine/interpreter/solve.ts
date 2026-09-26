@@ -98,9 +98,9 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
     sol.given.push({ symbolLatex: c.latex, name: c.name, raw: `${q.numText}${unitText}`, valueSI, quantity: c.quantity, unit: q.unit, sf: q.sf });
     sol.inputSigFigs.push(q.sf);
     if (q.unit && q.unit !== kind.si && !kind.angle && !(kind.percent && q.unit === '%')) {
-      sol.conversions.push(`${c.latex} = ${qtyLatex(q.value, q.unit, 6)} = ${fmtLatex(valueSI, 4)}${kind.siLatex ? '\\ ' + kind.siLatex : ''}`);
+      sol.conversions.push(`${c.latex} = ${qtyLatex(q.value, q.unit, 12)} = ${fmtLatex(valueSI, 12)}${kind.siLatex ? '\\ ' + kind.siLatex : ''}`);
     } else if (kind.percent && q.unit === '%') {
-      sol.conversions.push(`${c.latex} = ${fmtLatex(q.value, 6)}\\% = ${fmtLatex(valueSI, 4)}`);
+      sol.conversions.push(`${c.latex} = ${fmtLatex(q.value, 12)}\\% = ${fmtLatex(valueSI, 12)}`);
     }
   }
   // implicit data from wording

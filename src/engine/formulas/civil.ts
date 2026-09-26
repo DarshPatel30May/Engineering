@@ -106,6 +106,7 @@ export const civilFormulas: FormulaDef[] = [
     hsc: ['Elongation of a steel tie under load', 'Change in length of a bridge cable'],
     example: { F: 10000, L0: 2, A: 100e-6, dL: 1e-3 },
     priority: 1,
+    chainCost: 3.5,
   },
   {
     id: 'hooke',

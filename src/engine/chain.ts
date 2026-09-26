@@ -121,7 +121,7 @@ export function solveChain(knownIn: Known[], targets: string[], opts: ChainOptio
   const costOf = (c: string): number => (given.has(c) ? 0 : best.get(c)?.cost ?? Infinity);
 
   const baseCost = (f: FormulaDef) => {
-    let b = f.identity ? 1.3 : 1 - (f.priority ?? 0) * 0.02;
+    let b = f.chainCost ?? (f.identity ? 1.3 : 1 - (f.priority ?? 0) * 0.02);
     if (mods.length && !f.modules.some((m) => mods.includes(m))) b += 0.25;
     return b;
   };
