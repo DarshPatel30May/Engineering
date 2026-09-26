@@ -120,8 +120,10 @@ function occurrences(textLower: string, kw: string): number[] {
 const CONTEXT_REQUIRED: Record<string, RegExp> = {
   load: /effort|pulley|lever|machine|jack|winch|mechanical advantage|velocity ratio|block and tackle|hoist|wheel and axle|screw/,
   effort: /effort|pulley|lever|machine|jack|winch|mechanical advantage|velocity ratio|block and tackle|hoist|wheel and axle|screw/,
-  F1: /piston|hydraulic|cylinder|pascal/,
-  F2: /piston|hydraulic|cylinder|pascal/,
+  distL: /effort|pulley|lever|machine|jack|winch|mechanical advantage|velocity ratio|block and tackle|hoist|wheel and axle|screw/,
+  distE: /effort|pulley|lever|machine|jack|winch|mechanical advantage|velocity ratio|block and tackle|hoist|wheel and axle|screw/,
+  F1: /piston|hydraulic|cylinder|pascal|plunger|ram/,
+  F2: /piston|hydraulic|cylinder|pascal|plunger|ram/,
   Ffail: /fail|break|ultimate load|factor of safety|safe/,
   Fw: /working load|safe|factor of safety/,
   Lift: /lift|aircraft|wing|glid|flight/,
@@ -187,6 +189,25 @@ const CONCEPT_MODULES = (() => {
   return map;
 })();
 
+/** "Calculate the E of a material…": resolve a bare symbol using the other data in the question. */
+function symbolTarget(norm: string, clauseStart: number, assigned: Set<string>, modules: ModuleId[]): string | null {
+  const mm = /^\s*(?:the\s+)?([A-Za-zσεμηρλθφγτωΔ][A-Za-z0-9_]{0,3})(?![A-Za-z])/.exec(norm.slice(clauseStart));
+  if (!mm) return null;
+  const sym = mm[1];
+  const cands = CONCEPTS.filter((c) => c.symbols?.includes(sym) && !assigned.has(c.id));
+  if (!cands.length) return null;
+  const score = (id: string) => {
+    let n = 0;
+    for (const f of FORMULAS) {
+      if (!f.vars.some((v) => v.concept === id)) continue;
+      n += f.vars.filter((v) => v.concept !== id && assigned.has(v.concept)).length;
+      if (modules.length && f.modules.some((x) => modules.includes(x))) n += 0.1;
+    }
+    return n;
+  };
+  return cands.sort((a, b) => score(b.id) - score(a.id))[0].id;
+}
+
 export function findTargets(norm: string, assigned: Set<string>, modules: ModuleId[]): string[] {
   const lower = norm.toLowerCase();
   const targets: string[] = [];
@@ -218,6 +239,10 @@ export function findTargets(norm: string, assigned: Set<string>, modules: Module
     if (how && (!best || best.score < 6)) {
       const opts = HOW_MAP[how];
       best = { id: modules.includes('aero') && opts.includes('glideDist') ? 'glideDist' : opts[0], score: 10 };
+    }
+    if ((!best || best.score <= 4) && pi === 0) {
+      const sym = symbolTarget(norm, m.index + m[0].length - m[2].length, assigned, modules);
+      if (sym) best = { id: sym, score: 10 };
     }
     if (best && best.score > 4 && !targets.includes(best.id)) targets.push(best.id);
     }
@@ -262,6 +287,7 @@ function detectFlags(lower: string): Record<string, boolean> {
     doubleShear: /double shear/.test(lower),
     singleShear: /single shear/.test(lower),
     level: /straight and level|level flight|cruis/.test(lower),
+    constantSpeed: /(constant|steady|uniform) (speed|velocity)|without accelerating|at a constant rate/.test(lower),
     slideOnset: /(about|starts?|begins?|just) to slide|on the point of sliding|angle of repose|impending/.test(lower),
     halfWave: /half[- ]wave|dipole/.test(lower),
     quarterWave: /quarter[- ]wave|monopole|whip/.test(lower),

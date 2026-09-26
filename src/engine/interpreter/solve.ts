@@ -140,6 +140,13 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
       sol.given[sol.given.length - 1].raw = `${fmt(hK.valueSI * factor, 4)} m`;
     }
   }
+  // constant speed on a level surface: the applied force just balances friction
+  if (interp.flags.constantSpeed && !seen.has('Ff') && interp.targets.some((t) => ['mu', 'Ff', 'normal'].includes(t))) {
+    const fK = knowns.find((k) => k.concept === 'F');
+    if (fK) {
+      add('Ff', fK.valueSI, 'constant speed ⇒ applied force = friction');
+    }
+  }
   if (interp.flags.doubleShear) add('shearPlanes', 2, 'double shear');
   if (interp.flags.singleShear) add('shearPlanes', 1, 'single shear');
 

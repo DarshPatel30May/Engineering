@@ -166,3 +166,19 @@ describe('HSC audit — alternative phrasings', () => {
     near(s.finals.find((f) => f.symbolLatex === 'P')!.valueSI, 0.0188);
   });
 });
+
+describe('HSC audit — final probing round', () => {
+  const cases: [string, number, string?][] = [
+    ['A 6 m simply supported beam carries a UDL of 2 kN/m over its entire length and a point load of 8 kN at mid-span. The beam has a second moment of area of 50 × 10^6 mm^4 and a depth of 300 mm. Calculate the maximum bending stress.', 63e6, '\\sigma_{max}'],
+    ['A copper wire has a resistance of 0.5 Ω and carries a current of 12 A. Calculate the power loss in the wire.', 72],
+    ['A truck of mass 8 t travelling at 90 km/h brakes uniformly to rest. The braking force is 20 kN. Calculate the stopping distance.', 125],
+    ['A cyclist and bicycle have a combined mass of 90 kg. The cyclist accelerates from 5 m/s to 10 m/s in 4 s. Calculate the average net force.', 112.5],
+    ['An aluminium tube has an outside diameter of 50 mm and an inside diameter of 40 mm. It carries a compressive load of 30 kN. Calculate the stress.', 30000 / ((Math.PI * (0.05 ** 2 - 0.04 ** 2)) / 4)],
+    ['A block of mass 50 kg is pulled along a horizontal floor at constant speed by a horizontal force of 147 N. Calculate the coefficient of friction.', 147 / (50 * 9.81)],
+    ['A satellite dish receives a signal at 12 GHz. Calculate the wavelength.', 0.025],
+    ['The input to an amplifier is 20 mV and the output is 2 V. Calculate the voltage gain in dB.', 40],
+    ['An 800 kg lift car is raised 30 m in 25 s. If the motor is 75% efficient, calculate the electrical power input.', (800 * 9.81 * 30) / 25 / 0.75],
+    ['Calculate the E of a material if a stress of 350 MPa produces a strain of 0.005.', 70e9],
+  ];
+  for (const [q, expected, sym] of cases) it(q.slice(0, 70), () => near(val(q, sym), expected));
+});
