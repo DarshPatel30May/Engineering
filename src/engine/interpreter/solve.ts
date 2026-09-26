@@ -11,7 +11,7 @@ import { emptySolution, hasErrors, Solution } from '../solution';
 import { beamSolution } from '../tools/beam';
 import { circuitSolution } from '../tools/circuit';
 import { logicSolution } from '../tools/logic';
-import { gearSolution, inclineSolution } from '../tools/mechanics';
+import { forcesSolution, gearSolution, inclineSolution } from '../tools/mechanics';
 import { leverRuleSolution } from '../tools/materials';
 import { numberSolution } from '../tools/numbase';
 import type { Interpretation } from './interpret';
@@ -54,6 +54,9 @@ export function solveInterpretation(interp: Interpretation, sf = 4): Solution {
         break;
       case 'gear':
         sol = gearSolution(sp.input);
+        break;
+      case 'forces':
+        sol = forcesSolution(sp.forces);
         break;
       case 'truss':
         sol = emptySolution('Truss analysis');
@@ -148,6 +151,27 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
     const c = getConcept(t);
     if (c) sol.find.push({ symbolLatex: c.latex, name: c.name });
   });
+  // light passing from/into air: n(air) = 1.00
+  if (/\bair\b/.test(lowerText) && interp.targets.some((t) => ['theta1', 'theta2', 'n1', 'n2', 'thetaC'].includes(t))) {
+    const fromAir = /from air|in air (onto|into|to)|air into|air to/.test(lowerText);
+    const intoAir = /into air|to air|out into the air|emerges into air|glass to air|water to air/.test(lowerText);
+    if (fromAir && !seen.has('n1')) add('n1', 1, 'refractive index of air');
+    else if (fromAir && seen.has('n1') && !seen.has('n2')) {
+      // the single index given belongs to the second medium
+      const k = knowns.find((x) => x.concept === 'n1')!;
+      k.concept = 'n2';
+      seen.delete('n1');
+      seen.add('n2');
+      const gv = sol.given.find((x) => x.symbolLatex === 'n_1');
+      if (gv) {
+        gv.symbolLatex = 'n_2';
+        gv.name = 'Refractive index of medium 2';
+      }
+      add('n1', 1, 'refractive index of air');
+    } else if (intoAir && !seen.has('n2')) add('n2', 1, 'refractive index of air');
+  }
+  const exclude: string[] = [];
+  if (interp.targets.includes('antennaLength')) exclude.push(interp.flags.quarterWave ? 'halfWave' : 'quarterWave');
   sol.issues.push(...consistencyIssues(knowns, { modules: interp.modules }));
 
   const allSteps: ReturnType<typeof chainToSteps>['steps'] = [];
@@ -160,7 +184,7 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
       sol.finals.push({ symbolLatex: c.latex, name: `${c.name} (given)`, valueSI: k.valueSI, quantity: c.quantity });
       continue;
     }
-    let res = solveChain(knowns, [t], { modules: interp.modules });
+    let res = solveChain(knowns, [t], { modules: interp.modules, exclude });
     if (res.missing.length) {
       // standard assumptions students are expected to make
       const assumptions: [string, number, string, RegExp][] = [
@@ -170,7 +194,7 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
       ];
       for (const [c, val, why, re] of assumptions) {
         if (seen.has(c) || !re.test(lowerText)) continue;
-        const trial = solveChain([...knowns, { concept: c, valueSI: val, source: 'given' }], [t], { modules: interp.modules });
+        const trial = solveChain([...knowns, { concept: c, valueSI: val, source: 'given' }], [t], { modules: interp.modules, exclude });
         if (!trial.missing.length) {
           add(c, val, why);
           sol.issues.push({ level: 'warning', message: `Assumption: ${why}.` });

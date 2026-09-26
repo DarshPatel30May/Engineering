@@ -751,4 +751,111 @@ export const civilFormulas: FormulaDef[] = [
     example: { m: 7850, V: 1 },
     priority: 2,
   },
+
+  {
+    id: 'brinell',
+    name: 'Brinell hardness',
+    modules: ['civil', 'transport', 'aero'],
+    topic: 'Material testing',
+    equation: 'HB = \\frac{2F}{\\pi D\\left(D - \\sqrt{D^2 - d^2}\\right)}',
+    vars: [
+      v('HB', 'HB', 'Brinell hardness number (kgf/mm²)', 'hardnessB', { positive: true }),
+      v('F', 'F', 'Test load (e.g. 3000 kgf = 29.42 kN)', 'force', { positive: true }),
+      v('D', 'D', 'Ball diameter (usually 10 mm)', 'length', { concept: 'ballDia', positive: true }),
+      v('d', 'd', 'Indentation diameter', 'length', { concept: 'indentDia', positive: true }),
+    ],
+    solve: {
+      HB: { expr: '\\frac{2 #F}{\\pi #D (#D - \\sqrt{#D^2 - #d^2})}', fn: ({ F, D, d }) => (2 * F) / (Math.PI * D * (D - Math.sqrt(D * D - d * d))) },
+      F: { expr: '\\frac{#HB \\pi #D (#D - \\sqrt{#D^2 - #d^2})}{2}', fn: ({ HB, D, d }) => (HB * Math.PI * D * (D - Math.sqrt(D * D - d * d))) / 2 },
+      d: {
+        expr: '\\sqrt{#D^2 - \\left(#D - \\frac{2 #F}{\\pi #D #HB}\\right)^2}',
+        fn: ({ HB, F, D }) => {
+          const k = D - (2 * F) / (Math.PI * D * HB);
+          return Math.sqrt(D * D - k * k);
+        },
+      },
+      D: {
+        expr: '\\text{solved numerically}',
+        fn: ({ HB, F, d }) => {
+          // HB decreases with D; bisection on D in (d, 100 d)
+          const f = (D: number) => (2 * F) / (Math.PI * D * (D - Math.sqrt(D * D - d * d))) - HB;
+          let lo = d * (1 + 1e-9);
+          let hi = d * 1000;
+          if (f(lo) * f(hi) > 0) return NaN;
+          for (let i = 0; i < 200; i++) {
+            const mid = (lo + hi) / 2;
+            if (f(lo) * f(mid) <= 0) hi = mid;
+            else lo = mid;
+          }
+          return (lo + hi) / 2;
+        },
+        note: 'no closed form — bisection',
+      },
+    },
+    aliases: ['brinell', 'hardness test', 'HB', 'BHN', 'indentation'],
+    when: 'Hardness from a Brinell test (hardened steel ball pressed into the surface). Result in kgf/mm² (HB).',
+    sheet: 'no',
+    source: 'Engineering materials — testing',
+    hsc: ['Hardness of a steel sample from indentation diameter'],
+    example: { F: 3000 * 9.80665, D: 0.01, d: 0.004 },
+    checks: ({ D, d }) => (d >= D ? [{ level: 'error', message: 'Indentation diameter must be smaller than the ball diameter.' }] : []),
+    extension: true,
+    priority: 1,
+  },
+  {
+    id: 'vickers',
+    name: 'Vickers hardness',
+    modules: ['civil', 'transport', 'aero'],
+    topic: 'Material testing',
+    equation: 'HV = \\frac{1.8544 F}{d^2}',
+    vars: [
+      v('HV', 'HV', 'Vickers hardness number (kgf/mm²)', 'hardnessV', { positive: true }),
+      v('F', 'F', 'Test load', 'force', { positive: true }),
+      v('d', 'd', 'Mean diagonal of indentation', 'length', { concept: 'indentDia', positive: true }),
+    ],
+    solve: {
+      HV: { expr: '\\frac{1.8544 #F}{#d^2}', fn: ({ F, d }) => (1.8544 * F) / (d * d) },
+      F: { expr: '\\frac{#HV #d^2}{1.8544}', fn: ({ HV, d }) => (HV * d * d) / 1.8544 },
+      d: { expr: '\\sqrt{\\frac{1.8544 #F}{#HV}}', fn: ({ F, HV }) => Math.sqrt((1.8544 * F) / HV) },
+    },
+    aliases: ['vickers', 'diamond pyramid', 'HV', 'micro hardness'],
+    when: 'Hardness from a Vickers diamond-pyramid test.',
+    sheet: 'no',
+    source: 'Engineering materials — testing',
+    hsc: ['Vickers hardness of a heat-treated component'],
+    example: { F: 30 * 9.80665, d: 0.0005 },
+    extension: true,
+    priority: 1,
+  },
+  {
+    id: 'impactEnergy',
+    name: 'Impact test energy absorbed (Charpy / Izod)',
+    modules: ['civil', 'transport', 'aero'],
+    topic: 'Material testing',
+    equation: 'E = mg(h_1 - h_2)',
+    vars: [
+      v('E', 'E', 'Energy absorbed by the specimen', 'energy', { concept: 'impactE' }),
+      v('m', 'm', 'Pendulum mass', 'mass', { positive: true }),
+      gVar(),
+      v('h1', 'h_1', 'Release height', 'length'),
+      v('h2', 'h_2', 'Rise height after fracture', 'length'),
+    ],
+    solve: {
+      E: { expr: '#m #g (#h1 - #h2)', fn: ({ m, g, h1, h2 }) => m * g * (h1 - h2) },
+      m: { expr: '\\frac{#E}{#g (#h1 - #h2)}', fn: ({ E, g, h1, h2 }) => E / (g * (h1 - h2)) },
+      g: { expr: '\\frac{#E}{#m (#h1 - #h2)}', fn: ({ E, m, h1, h2 }) => E / (m * (h1 - h2)) },
+      h1: { expr: '#h2 + \\frac{#E}{#m #g}', fn: ({ E, m, g, h2 }) => h2 + E / (m * g) },
+      h2: { expr: '#h1 - \\frac{#E}{#m #g}', fn: ({ E, m, g, h1 }) => h1 - E / (m * g) },
+    },
+    aliases: ['charpy', 'izod', 'impact test', 'toughness test', 'pendulum'],
+    when: 'Toughness: energy absorbed = loss of pendulum potential energy.',
+    sheet: 'no',
+    source: 'Engineering materials — testing',
+    hsc: ['Energy absorbed in a Charpy test comparing brittle and ductile specimens'],
+    example: { m: 20, h1: 1.5, h2: 0.6 },
+    checks: ({ h1, h2 }) => (h2 > h1 ? [{ level: 'error', message: 'The pendulum cannot rise higher than its release height.' }] : []),
+    extension: true,
+    priority: 1,
+  },
+
 ];

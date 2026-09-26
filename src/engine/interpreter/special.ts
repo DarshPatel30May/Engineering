@@ -7,7 +7,7 @@ import type { ModuleId } from '../formulas/types';
 import type { BeamInput } from '../tools/beam';
 import type { CircuitInput } from '../tools/circuit';
 import type { InclineInput } from '../tools/mechanics';
-import type { GearInput } from '../tools/mechanics';
+import type { GearInput, ForceVec } from '../tools/mechanics';
 import type { Base } from '../tools/numbase';
 import { dimEq, parseUnit } from '../units';
 import type { RawQuantity } from './extract';
@@ -20,7 +20,8 @@ export type SpecialResult =
   | { type: 'logic'; expr: string; notes: string[] }
   | { type: 'numbase'; value: string; from: Base; notes: string[] }
   | { type: 'lever'; C0: number; notes: string[] }
-  | { type: 'gear'; input: GearInput; notes: string[] };
+  | { type: 'gear'; input: GearInput; notes: string[] }
+  | { type: 'forces'; forces: ForceVec[]; notes: string[] };
 
 const is = (q: RawQuantity, unit: string) => q.dim !== null && dimEq(q.dim, parseUnit(unit).dim);
 const lenQ = (q: RawQuantity) => is(q, 'm') && q.unit !== '';
@@ -78,6 +79,7 @@ function extractBeam(text: string, qs: RawQuantity[]): SpecialResult | undefined
       if (lq) used.add(lq);
     } else if (cand?.k === 'mid') x = L / 2;
     else if (cand?.k === 'end') x = cantilever ? (fixedRight ? 0 : L) : L;
+    if (x === undefined && /(central|centre|center|mid-?span|mid-?point)\s+(point\s+)?(load|force)?\s*(of\s*)?$/i.test(text.slice(Math.max(0, f.start - 30), f.start))) x = L / 2;
     if (x === undefined) {
       // position written before the load: "at 2 m from A there is a 10 kN load"
       const before = text.slice(Math.max(0, f.start - 50), f.start);
@@ -96,7 +98,7 @@ function extractBeam(text: string, qs: RawQuantity[]): SpecialResult | undefined
   // Lists such as "loads of 10 kN and 20 kN at 2 m and 5 m from the left"
   if (pendingForces.length) {
     const spare = lengths
-      .filter((q) => !used.has(q) && !q.symbol && q.start > pendingForces[0].end && /^\s*(?:and|,|from|m\b)?/.test(text.slice(q.end, q.end + 6)) && /\bat\b|,|and/.test(text.slice(Math.max(0, q.start - 6), q.start)))
+      .filter((q) => !used.has(q) && !q.symbol && q.start > pendingForces[0].end && !/^\s*(wide|deep|long|thick|high|in diameter|diameter)/i.test(text.slice(q.end, q.end + 14)) && /\bat\b[^.;]*$/i.test(text.slice(Math.max(0, q.start - 30), q.start)))
       .slice(0, pendingForces.length);
     const refRight = /from (the )?(right|b\b)/i.test(text.slice(pendingForces[0].end, (spare[spare.length - 1]?.end ?? pendingForces[0].end) + 30));
     if (spare.length === pendingForces.length) {
@@ -238,9 +240,11 @@ function extractLogic(text: string): SpecialResult | undefined {
 
 // ——— Number systems ———
 function extractNumbase(text: string): SpecialResult | undefined {
+  // (text is re-bound below to join spaced binary groups)
   const lower = text.toLowerCase();
   if (!/binary|hexadecimal|\bhex\b|octal|two'?s complement|base\s*(2|8|16)/.test(lower)) return;
   if (!/convert|equivalent|express|represent|value|what is|write|in binary|in decimal|in hex/.test(lower)) return;
+  text = text.replace(/\b([01]{4})((?:\s[01]{4})+)\b/g, (x) => x.replace(/\s/g, ''));
   const m = /(?:number|convert|value|express|represent|write)\s+(?:the\s+)?(?:(binary|hexadecimal|hex|octal|decimal|denary)\s+(?:number\s+|value\s+)?)?(-?(?:0x)?[0-9A-Fa-f]+)(?:\s*(?:₂|₁₆|₈|₁₀|_?\(?(?:base\s*)?(2|8|10|16)\)?))?/i.exec(text);
   if (!m) return;
   const val = m[2];
@@ -281,11 +285,34 @@ function extractGear(text: string, qs: RawQuantity[]): SpecialResult | undefined
   return { type: 'gear', input: { stages, nIn: speed?.valueSI, Tin: torque?.valueSI, eta: eta?.valueSI }, notes: ['Gears paired in the order given: (driver, driven), (driver, driven)…'] };
 }
 
+// ——— Load hung from two cables ———
+function extractCables(text: string, qs: RawQuantity[]): SpecialResult | undefined {
+  const lower = text.toLowerCase();
+  if (!/(two|2|pair of)\s+(cables|ropes|chains|wires|strings|ties|slings)|(cables|ropes|chains|wires) (at|making|inclined)/.test(lower)) return;
+  const angles = qs.filter((q) => q.unit === '°');
+  if (angles.length !== 2) return;
+  const load = qs.find(forceQ) ?? qs.find(massQ);
+  if (!load) return;
+  const W = forceQ(load) ? load.valueSI : load.valueSI * 9.81;
+  const fromVertical = /to the vertical|from the vertical|with the vertical/.test(lower);
+  const a = angles.map((q) => (fromVertical ? 90 - q.value : q.value));
+  const forces: ForceVec[] = [
+    { name: 'W', F: W, angle: 270 },
+    { name: 'T_1', angle: 180 - a[0] },
+    { name: 'T_2', angle: a[1] },
+  ];
+  return {
+    type: 'forces',
+    forces,
+    notes: [`Cable 1 taken on the left at ${a[0]}° above the horizontal, cable 2 on the right at ${a[1]}°${fromVertical ? ' (converted from angles to the vertical)' : ''}. Load ${massQ(load) ? 'weight W = mg' : 'W'} acts vertically down.`],
+  };
+}
+
 export function detectSpecial(text: string, qs: RawQuantity[], modules: ModuleId[], flags: Record<string, boolean>): SpecialResult | undefined {
   const lower = text.toLowerCase();
   void modules;
   if (/force in (each|every|all)?\s*(of the )?members?|member forces|forces in (all )?the members|method of joints|method of sections/.test(lower) && /truss|frame/.test(lower)) {
     return { type: 'truss', notes: ['Truss geometry cannot be read reliably from text. Enter the joints, members, supports and loads in the Truss Solver.'] };
   }
-  return extractNumbase(text) ?? extractLever(text, qs) ?? extractLogic(text) ?? extractCircuit(text, qs) ?? extractBeam(text, qs) ?? extractIncline(text, qs, flags) ?? extractGear(text, qs);
+  return extractNumbase(text) ?? extractLever(text, qs) ?? extractLogic(text) ?? extractCircuit(text, qs) ?? extractBeam(text, qs) ?? extractIncline(text, qs, flags) ?? extractGear(text, qs) ?? extractCables(text, qs);
 }

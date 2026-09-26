@@ -25,6 +25,7 @@ export const aeroFormulas: FormulaDef[] = [
     hsc: ['Lift required for an aircraft of given mass in cruise'],
     example: { Wt: 50000 },
     contextOnly: ['aero'],
+    unlessKnown: ['climbAngle', 'gamma', 'bankAngle', 'loadFactor', 'deltaP', 'CL'],
     priority: 2,
   },
   {
@@ -45,6 +46,7 @@ export const aeroFormulas: FormulaDef[] = [
     hsc: ['Thrust required in cruise given the L/D ratio'],
     example: { Drag: 3000 },
     contextOnly: ['aero'],
+    unlessKnown: ['climbAngle', 'gamma', 'bankAngle'],
     priority: 2,
   },
   {

@@ -66,7 +66,7 @@ function Detail({ id }: { id: string }) {
               <div className="ctl-label">All rearrangements</div>
               {f.vars.map((v) => (
                 <div key={v.key} style={{ padding: '3px 0' }}>
-                  <Tex tex={rearranged(id, v.key)} />
+                  <Tex tex={`\\displaystyle ${rearranged(id, v.key)}`} />
                   {f.solve[v.key].note && <span className="faint small"> ({f.solve[v.key].note})</span>}
                 </div>
               ))}
@@ -115,7 +115,7 @@ export function FormulaLibrary({ selected }: { selected?: string }) {
                 <h4>{f.name}</h4>
                 <span className={`tag ${SHEET[f.sheet][0]}`}>{SHEET[f.sheet][1]}</span>
               </div>
-              <div className="eq"><Tex tex={f.equation} /></div>
+              <div className="eq"><Tex tex={`\\displaystyle ${f.equation}`} /></div>
               <div className="faint small">{f.topic} · {f.modules.map((m) => MODULE_NAMES[m].split(' ')[0]).join(', ')}</div>
             </div>
           ))}

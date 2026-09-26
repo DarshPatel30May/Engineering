@@ -127,14 +127,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .btn.small { padding: 3px 9px; font-size: 12.5px; }
 .btn.ghost { background: transparent; }
 .btn:disabled { opacity: 0.5; cursor: default; }
-input[type='text'], input[type='number'], select, textarea {
+input:not([type]), input[type='text'], input[type='number'], select, textarea {
   background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 9px; outline: none; min-width: 0;
 }
 input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 input.num { font-family: var(--mono); }
 textarea { width: 100%; resize: vertical; line-height: 1.5; }
 select { cursor: pointer; }
-label.field { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--text-dim); }
+label.field { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--text-dim); min-width: 0; }
+label.field > input, label.field > select { width: 100%; }
+.grid-2 > * { min-width: 0; }
 .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .muted { color: var(--text-dim); }

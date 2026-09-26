@@ -38,7 +38,7 @@ const EXAMPLES: { m: string; q: string }[] = [
   { m: 'Telecom', q: "Complete the truth table for X = A.B + C'" },
 ];
 
-const TOOL_FOR: Record<string, ToolId | undefined> = { beam: 'beam', circuit: 'circuit', incline: 'incline', logic: 'logic', numbase: 'numbase', lever: 'lever', gear: 'gear', truss: 'truss' };
+const TOOL_FOR: Record<string, ToolId | undefined> = { beam: 'beam', circuit: 'circuit', incline: 'incline', logic: 'logic', numbase: 'numbase', lever: 'lever', gear: 'gear', truss: 'truss', forces: 'forces' };
 
 const PIPELINE = ['Module', 'Known values', 'Unknown', 'Formula chain', 'SI units', 'Rearrange', 'Substitute', 'Calculate', 'Unit check', 'Working', 'Answer', 'Equivalents'];
 
@@ -55,7 +55,7 @@ export function SmartSolver() {
   const openTool = () => {
     if (!interp?.special || !toolId) return;
     const sp = interp.special;
-    const payload = sp.type === 'beam' || sp.type === 'circuit' || sp.type === 'incline' || sp.type === 'gear' ? sp.input : sp.type === 'logic' ? sp.expr : sp.type === 'numbase' ? { value: sp.value, from: sp.from } : sp.type === 'lever' ? sp.C0 : null;
+    const payload = sp.type === 'beam' || sp.type === 'circuit' || sp.type === 'incline' || sp.type === 'gear' ? sp.input : sp.type === 'logic' ? sp.expr : sp.type === 'numbase' ? { value: sp.value, from: sp.from } : sp.type === 'lever' ? sp.C0 : sp.type === 'forces' ? sp.forces : null;
     setPendingTool(toolId, payload);
     navigate(`tool/${toolId}`);
   };

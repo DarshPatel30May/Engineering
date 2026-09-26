@@ -37,7 +37,7 @@ export interface ChainResult {
 }
 
 /** Bridging identities between concepts that are the same physical value in typical HSC questions. */
-function identity(a: string, b: string, q: QuantityId, why: string, unlessKnown?: string[]): FormulaDef {
+function identity(a: string, b: string, q: QuantityId, why: string, unlessKnown?: string[], contextOnly?: ModuleId[]): FormulaDef {
   const ca = getConcept(a)!;
   const cb = getConcept(b)!;
   return {
@@ -57,6 +57,7 @@ function identity(a: string, b: string, q: QuantityId, why: string, unlessKnown?
     priority: -5,
     identity: true,
     unlessKnown,
+    contextOnly,
   };
 }
 
@@ -66,8 +67,10 @@ export const IDENTITIES: FormulaDef[] = [
   identity('F', 'Wt', 'force', 'The applied load is the weight of the mass (W = mg).', ['a', 'u', 'v', 's', 'mu', 'incline', 'Ft', 'Fr']),
   identity('work', 'PE', 'energy', 'Work done lifting the load equals the potential energy gained.'),
   identity('work', 'KE', 'energy', 'Work done (e.g. by the brakes) equals the change in kinetic energy.'),
-  identity('load', 'Wt', 'force', 'The load raised is the weight of the mass.'),
-  identity('load', 'F', 'force', 'The load is the output force.'),
+  identity('load', 'Wt', 'force', 'The load raised is the weight of the mass.', ['a', 'u', 'v', 's', 'mu', 'incline', 'Ft', 'Fr']),
+  identity('load', 'F', 'force', 'The load is the output force.', ['a', 'u', 'v', 's', 'mu', 'incline', 'Ft', 'Fr']),
+  identity('F', 'Th', 'force', 'The force driving the aircraft is the engine thrust.', undefined, ['aero']),
+  identity('wingArea', 'A', 'area', 'The area given is the wing (planform) area.', undefined, ['aero']),
   identity('Fw', 'F', 'force', 'The working load is the applied force.'),
   identity('normal', 'Wt', 'force', 'On a horizontal surface the normal reaction equals the weight.', ['incline']),
   identity('Pin', 'P', 'power', 'The electrical power drawn is the input power.'),
@@ -79,6 +82,9 @@ export const IDENTITIES: FormulaDef[] = [
   identity('Ft', 'F', 'force', 'The tractive force is the applied driving force.'),
   identity('Th', 'Ft', 'force', 'Thrust is the driving force on the aircraft.'),
   identity('Fr', 'Drag', 'force', 'The resistance to motion is the drag.'),
+  identity('F2', 'Wt', 'force', 'The output piston supports the weight of the load.'),
+  identity('F2', 'load', 'force', 'The output piston force is the load raised.'),
+  identity('Ein', 'KE', 'energy', 'The energy available (input) is the kinetic energy of the vehicle.'),
 ];
 
 export interface ChainOptions {
@@ -129,7 +135,7 @@ export function solveChain(knownIn: Known[], targets: string[], opts: ChainOptio
   for (let round = 0; round < 30; round++) {
     let changed = false;
     for (const f of formulas) {
-      if (f.unlessKnown?.some((c) => valueOf(c) !== undefined)) continue;
+      if (f.unlessKnown?.some((c) => given.has(c))) continue;
       for (const target of f.vars) {
         if (!f.solve[target.key]) continue;
         if (given.has(target.concept)) continue;
@@ -141,6 +147,11 @@ export function solveChain(knownIn: Known[], targets: string[], opts: ChainOptio
           if (vd.key === target.key) continue;
           const val = valueOf(vd.concept);
           if (val !== undefined && vd.concept !== target.concept) {
+            // no identity-of-identity chains (e.g. weight → force → tractive force → thrust)
+            if (f.identity && best.get(vd.concept)?.formula.identity) {
+              ok = false;
+              break;
+            }
             inputs[vd.key] = val;
             cost += costOf(vd.concept);
             inputConcepts.push(vd.concept);

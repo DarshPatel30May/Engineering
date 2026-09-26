@@ -151,3 +151,16 @@ describe('error detection', () => {
     expect(s.ok).toBe(false);
   });
 });
+
+import { MODULE_CATALOG } from '../src/data/modules';
+describe('catalogue', () => {
+  it('every formula appears in at least one module category and every catalogue id exists', () => {
+    const listed = new Set<string>();
+    for (const cats of Object.values(MODULE_CATALOG)) for (const c of cats) for (const it of c.items) if (it.kind === 'formula') {
+      expect(() => getFormula(it.id)).not.toThrow();
+      listed.add(it.id);
+    }
+    const missing = FORMULAS.filter((f) => !listed.has(f.id)).map((f) => f.id);
+    expect(missing).toEqual([]);
+  });
+});

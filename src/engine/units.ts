@@ -112,6 +112,12 @@ const SPECIAL: [string[], number, Dim][] = [
   [['bar'], 1e5, PA],
   [['atm'], 101325, PA],
   [['cc'], 1e-6, [3, 0, 0, 0]],
+  [['kgf'], 9.80665, N_],
+  [['HB', 'BHN'], 9.80665e6, PA],
+  [['HV', 'VHN'], 9.80665e6, PA],
+  [['$', 'AUD', 'dollars', 'dollar'], 1, DIMLESS],
+  [['c', 'cents', 'cent'], 0.01, DIMLESS],
+  [['div', 'divs', 'division', 'divisions', 'cm div'], 1, DIMLESS],
   [['1', ''], 1, DIMLESS],
 ];
 
@@ -207,7 +213,7 @@ export function parseUnit(raw: string): ParsedUnit {
       if (peek() !== ')') throw new UnitParseError(`Missing ")" in unit "${raw}"`);
       pos++;
     } else {
-      const m = /^[A-Za-zΩμµ°º%]+/.exec(s.slice(pos));
+      const m = /^[A-Za-zΩμµ°º%$]+/.exec(s.slice(pos));
       if (!m) throw new UnitParseError(`Cannot read unit "${raw}"`);
       let word = m[0];
       // trailing digit exponent like m2, mm3 (only when not followed by more letters)

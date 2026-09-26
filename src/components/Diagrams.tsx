@@ -25,7 +25,7 @@ export function BeamDiagram({ data }: { data: { input: BeamInput; result: BeamRe
   const Mu = kN ? 'kN·m' : 'N·m';
   // panel geometry
   const beamY = 70;
-  const sfdTop = 150;
+  const sfdTop = 185;
   const panelH = 120;
   const bmdTop = sfdTop + panelH + 40;
   const H = bmdTop + panelH + 30;
@@ -98,7 +98,7 @@ export function BeamDiagram({ data }: { data: { input: BeamInput; result: BeamRe
           {[...new Set([0, L, ...inp.points.map((p) => p.x), ...inp.udls.flatMap((u) => [u.x1, u.x2]), ...r.reactions.map((re) => re.x)])]
             .sort((a, b) => a - b)
             .map((x) => (
-              <text key={'d' + x} x={X(x)} y={beamY + 76} textAnchor="middle" className="faint">{fmt(x, 3)}</text>
+              <text key={'d' + x} x={X(x)} y={beamY + 82} textAnchor="middle">{fmt(x, 3)} m</text>
             ))}
           {/* SFD */}
           <text x={8} y={sfdTop + 12} className="label-strong">SFD ({Fu})</text>
@@ -112,7 +112,7 @@ export function BeamDiagram({ data }: { data: { input: BeamInput; result: BeamRe
           <line x1={X(0)} x2={X(L)} y1={My(0)} y2={My(0)} className="axis" />
           <path d={bmdPath} className="bmd" />
           {r.keyPoints.map((kp, i) =>
-            Math.abs(kp.M) > maxM * 0.02 ? (
+            Math.abs(kp.M) > maxM * 0.02 && Math.abs(kp.x - r.maxM.x) > L * 0.03 ? (
               <text key={'m' + i} x={X(kp.x) + 3} y={My(kp.M) + (kp.M >= 0 ? -4 : 12)} fontSize={10}>{fmt(kp.M * sc, 3)}</text>
             ) : null,
           )}

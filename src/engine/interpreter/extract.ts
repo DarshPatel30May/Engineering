@@ -39,6 +39,7 @@ export function normaliseText(src: string): string {
     s = s.replace(/(\d),(\d{3})(?!\d)/g, '$1$2');
     s = s.replace(/(^|[^\d.])(\d{1,3}) (\d{3})(?![\d.])/g, '$1$2$3');
   }
+  s = s.replace(/(\d*\.?\d+)\s*:\s*1\b(?!\d)/g, '$1');
   s = s.replace(/per cent/gi, '%');
   s = s.replace(/degrees?(?![a-z])/gi, '°').replace(/\bdeg\b/gi, '°');
   s = s.replace(/°\s*C\b/g, ' degC');
@@ -142,5 +143,29 @@ export function extractQuantities(text: string): RawQuantity[] {
       sf: countSigFigs(numText),
     });
   }
-  return out;
+  return mergeRectangles(text, out);
+}
+
+/** "300 mm × 300 mm" or "20 mm by 10 mm" → one area quantity. */
+function mergeRectangles(text: string, qs: RawQuantity[]): RawQuantity[] {
+  const L: Dim = [1, 0, 0, 0];
+  const isLen = (q: RawQuantity) => q.dim !== null && q.dim.every((x, i) => x === L[i]);
+  const out: RawQuantity[] = [];
+  for (let i = 0; i < qs.length; i++) {
+    const a = qs[i];
+    const b = qs[i + 1];
+    const between = b ? text.slice(a.end, b.start) : '';
+    const bNoUnit = b && !b.unit && isLen(a) && /^\s*(?:×|x|\*|by)\s*$/i.test(between);
+    if (b && /^\s*(?:×|x|\*|by)\s*$/i.test(between) && ((isLen(a) && isLen(b)) || bNoUnit) && !/deep|wide|high|depth|width/i.test(text.slice(b.end, b.end + 8))) {
+      const bSI = bNoUnit ? b.value * (a.valueSI / a.value) : b.valueSI;
+      const unit = a.unit === (b.unit || a.unit) ? `${a.unit}²` : 'm²';
+      const areaSI = a.valueSI * bSI;
+      const factor = unit === 'm²' ? 1 : (a.valueSI / a.value) ** 2;
+      out.push({ ...a, numText: `${a.numText} × ${b.numText}`, value: areaSI / factor, unit, valueSI: areaSI, dim: [2, 0, 0, 0], end: b.end, sf: Math.min(a.sf, b.sf) });
+      i++;
+      continue;
+    }
+    out.push(a);
+  }
+  return out.map((q, i) => ({ ...q, index: i }));
 }

@@ -165,10 +165,11 @@ export interface Equivalent {
 export function equivalents(valueSI: number, kindId: string, sf = 4): Equivalent[] {
   const k = getQuantity(kindId);
   const list: Equivalent[] = [];
+  const best = bestUnit(valueSI, k);
   for (const u of k.units) {
     const factor = u === '' ? 1 : u === 'dB' ? 1 : parseUnit(u).factor;
     const v = valueSI / factor;
-    list.push({ unit: u, value: v, text: `${fmt(v, sf)}${u ? (u === '°' ? '°' : ' ' + u) : ''}`, latex: qtyLatex(v, u, sf), hsc: u === k.hsc });
+    list.push({ unit: u, value: v, text: `${fmt(v, sf)}${u ? (u === '°' ? '°' : ' ' + u) : ''}`, latex: qtyLatex(v, u, sf), hsc: u === best });
   }
   return list;
 }

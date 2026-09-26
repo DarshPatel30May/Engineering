@@ -247,12 +247,17 @@ export function CentroidTool() {
 // ——— Concurrent forces ———
 type FRow = { name: string; F: string; angle: string };
 export function ForcesTool() {
+  const pre = useMemo(() => takePendingTool<{ name: string; F?: number; angle: number }[]>('forces'), []);
   const [unit, setUnit] = useState<'N' | 'kN'>('kN');
-  const [rows, setRows] = useState<FRow[]>([
-    { name: 'W', F: '5', angle: '270' },
-    { name: 'T_1', F: '', angle: '30' },
-    { name: 'T_2', F: '', angle: '150' },
-  ]);
+  const [rows, setRows] = useState<FRow[]>(
+    pre
+      ? pre.map((f) => ({ name: f.name, F: f.F === undefined ? '' : String(Number((f.F / 1000).toPrecision(6))), angle: String(f.angle) }))
+      : [
+          { name: 'W', F: '5', angle: '270' },
+          { name: 'T_1', F: '', angle: '30' },
+          { name: 'T_2', F: '', angle: '150' },
+        ],
+  );
   const sol = useMemo(() => {
     const f = unit === 'kN' ? 1000 : 1;
     const forces = rows.filter((r) => r.angle !== '').map((r) => ({ name: r.name || 'F', F: r.F.trim() === '' ? undefined : num(r.F) * f, angle: num(r.angle) }));

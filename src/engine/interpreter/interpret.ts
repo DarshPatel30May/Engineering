@@ -25,7 +25,7 @@ export interface QtyAssignment extends RawQuantity {
   ignored?: boolean;
 }
 
-export type ProblemType = 'chain' | 'beam' | 'truss' | 'circuit' | 'incline' | 'logic' | 'numbase' | 'lever' | 'gear' | 'flight';
+export type ProblemType = 'chain' | 'beam' | 'truss' | 'circuit' | 'incline' | 'logic' | 'numbase' | 'lever' | 'gear' | 'flight' | 'forces';
 
 export interface Interpretation {
   text: string;
@@ -46,7 +46,7 @@ const MODULE_WORDS: Record<ModuleId, string[]> = {
   civil: ['beam', 'truss', 'bridge', 'column', 'cable', 'girder', 'joist', 'concrete', 'reinforced', 'prestressed', 'building', 'tie', 'strut', 'member', 'simply supported', 'cantilever', 'dam', 'footing', 'pier', 'rod', 'bar', 'steel', 'tensile test', 'specimen', 'structure', 'crane', 'stress', 'strain', 'udl', 'support', 'reaction', 'deck', 'tower', 'suspension'],
   transport: ['car', 'vehicle', 'train', 'tram', 'bus', 'bicycle', 'bike', 'brake', 'braking', 'friction', 'gear', 'engine', 'motor', 'pulley', 'lever', 'rail', 'tyre', 'tire', 'pedal', 'jack', 'wheel', 'axle', 'truck', 'road', 'hill', 'incline', 'ramp', 'slope', 'crate', 'block', 'piston', 'hydraulic', 'carbon', 'steel', 'pearlite', 'ferrite', 'battery', 'electric vehicle', 'kwh', 'transformer', 'sprocket', 'chain', 'teeth', 'effort', 'load', 'mechanical advantage', 'velocity ratio'],
   aero: ['aircraft', 'aeroplane', 'airplane', 'wing', 'lift', 'drag', 'thrust', 'glide', 'glider', 'flight', 'airspeed', 'bernoulli', 'fuselage', 'jet', 'propeller', 'pitot', 'altitude', 'take-off', 'takeoff', 'runway', 'climb', 'banked', 'aerofoil', 'airfoil', 'l/d', 'cruise', 'pilot', 'mach', 'venturi', 'airliner', 'helicopter', 'drone', 'cabin'],
-  telecom: ['signal', 'frequency', 'antenna', 'aerial', 'fibre', 'fiber', 'optical', 'resistor', 'resistance', 'circuit', 'voltage', 'current', 'binary', 'logic', 'gate', 'satellite', 'radio', 'decibel', 'db', 'bandwidth', 'modulation', 'transmitter', 'receiver', 'wavelength', 'refractive', 'critical angle', 'cladding', 'core', 'hexadecimal', 'truth table', 'bit', 'mbps', 'data', 'amplifier', 'ohm', 'series', 'parallel', 'mobile', 'microwave', 'dipole', 'sampling'],
+  telecom: ['signal', 'frequency', 'antenna', 'aerial', 'fibre', 'fiber', 'optical', 'resistor', 'circuit', 'voltage', 'current', 'binary', 'logic', 'gate', 'satellite', 'radio', 'decibel', 'db', 'bandwidth', 'modulation', 'transmitter', 'receiver', 'wavelength', 'refractive', 'critical angle', 'cladding', 'core', 'hexadecimal', 'truth table', 'bit', 'mbps', 'download', 'amplifier', 'ohm', 'series', 'parallel', 'mobile', 'microwave', 'dipole', 'sampling'],
 };
 
 export function detectModules(text: string): { modules: ModuleId[]; scores: Record<ModuleId, number> } {
@@ -62,7 +62,7 @@ export function detectModules(text: string): { modules: ModuleId[]; scores: Reco
   // "inclined plane" is not an aeroplane
   if (/inclined plane|plane (is )?inclined/.test(t)) scores.aero = Math.max(0, scores.aero - 1);
   const max = Math.max(...Object.values(scores));
-  const modules = max === 0 ? [] : (Object.keys(scores) as ModuleId[]).filter((m) => scores[m] >= max * 0.5 && scores[m] > 0).sort((a, b) => scores[b] - scores[a]);
+  const modules = max === 0 ? [] : (Object.keys(scores) as ModuleId[]).filter((m) => scores[m] >= max * 0.6 && scores[m] > 0).sort((a, b) => scores[b] - scores[a]);
   return { modules, scores };
 }
 
@@ -149,7 +149,7 @@ function scoreConcept(q: RawQuantity, c: Concept, textLower: string, all: RawQua
       if (/\.(\s|$)|\?|;/.test(between)) continue;
       const intervening = all.filter((o) => o !== q && o.start >= lo && o.end <= hi).length;
       let s = (1 + Math.min(kw.length, 30) / 8) * (1 - gap / 100) * Math.pow(0.35, intervening);
-      if (after) s *= 0.75;
+      if (after) s *= 0.85;
       best = Math.max(best, s);
     }
   }
@@ -157,7 +157,7 @@ function scoreConcept(q: RawQuantity, c: Concept, textLower: string, all: RawQua
     if (c.symbols.includes(q.symbol)) best += 4;
     else if (c.symbols.some((s) => s.toLowerCase() === q.symbol!.toLowerCase())) best += 2;
   }
-  if (best > 0) best += unitBoost(q, c);
+  best += unitBoost(q, c);
   const req = CONTEXT_REQUIRED[c.id];
   if (req && !req.test(textLower)) best *= 0.3;
   const kind = getQuantity(c.quantity).id;
@@ -165,7 +165,7 @@ function scoreConcept(q: RawQuantity, c: Concept, textLower: string, all: RawQua
   return best;
 }
 
-const TARGET_RE = /(calculate|determine|find|what is|what's|what was|evaluate|compute|how (?:much|far|long|fast|many)|show that|estimate|work out|state the|obtain|deduce|predict|solve for)\s+([^.?;\n]*)/gi;
+const TARGET_RE = /(calculate|determine|find|what is|what's|what was|what are|what|evaluate|compute|how (?:much|far|long|fast|many)|show that|estimate|work out|state the|obtain|deduce|predict|solve for)\s+([^.?;\n]*)/gi;
 
 const HOW_MAP: Record<string, string[]> = {
   'how far': ['s', 'glideDist'],
@@ -204,7 +204,10 @@ export function findTargets(norm: string, assigned: Set<string>, modules: Module
       for (const kw of c.keywords) {
         const occ = occurrences(clause, kw);
         if (!occ.length) continue;
-        let score = kw.length * 2 - occ[0] * 0.15;
+        let score = kw.length * 2 - occ[0] * 0.4 + (occ[0] <= 5 ? 8 : 0);
+        // a keyword immediately followed by a number labels given data, not the unknown
+        if (/^[^.;]{0,14}?\d/.test(clause.slice(occ[0] + kw.length))) score -= 15;
+        if (verb === 'how many' && getQuantity(c.quantity).id === 'count') score += 6;
         if (assigned.has(c.id)) score -= 12;
         if (modules.length && [...(CONCEPT_MODULES.get(c.id) ?? [])].some((mm) => modules.includes(mm))) score += 3;
         if (c.id === 'glideDist' && !modules.includes('aero')) score -= 20;
@@ -222,13 +225,13 @@ export function findTargets(norm: string, assigned: Set<string>, modules: Module
   return targets;
 }
 
-export function assignConcepts(quantities: RawQuantity[], norm: string): QtyAssignment[] {
+export function assignConcepts(quantities: RawQuantity[], norm: string, likelyTargets: string[] = []): QtyAssignment[] {
   const lower = norm.toLowerCase();
   const triples: { q: RawQuantity; c: string; s: number }[] = [];
   const cands = new Map<number, Candidate[]>();
   for (const q of quantities) {
     const list = candidateConcepts(q)
-      .map((c) => ({ concept: c.id, score: scoreConcept(q, c, lower, quantities) }))
+      .map((c) => ({ concept: c.id, score: scoreConcept(q, c, lower, quantities) * (likelyTargets.includes(c.id) ? 0.25 : 1) }))
       .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score);
     cands.set(q.index, list);
@@ -255,7 +258,7 @@ export function assignConcepts(quantities: RawQuantity[], norm: string): QtyAssi
 function detectFlags(lower: string): Record<string, boolean> {
   return {
     fromRest: /from rest|starts? from rest|initially at rest|from a standstill|stationary start/.test(lower),
-    toRest: /to rest|(comes?|brought|bring|brings) to (a )?(stop|rest|halt)|stops|to a stop|to a standstill|halts/.test(lower),
+    toRest: /to rest|(comes?|brought|bring|brings) to (a )?(stop|rest|halt)|stops|to a stop|to a standstill|halts|to stop|stopping|to come to rest|pulls up/.test(lower),
     doubleShear: /double shear/.test(lower),
     singleShear: /single shear/.test(lower),
     level: /straight and level|level flight|cruis/.test(lower),
@@ -275,7 +278,9 @@ export function interpret(text: string): Interpretation {
   const ambiguities: string[] = [];
   const raw = extractQuantities(normalised);
   const special = detectSpecial(normalised, raw, modules, flags);
-  const quantities = assignConcepts(raw, normalised);
+  // the unknown(s) named in the question must not be used to label given data
+  const prelimTargets = findTargets(normalised, new Set(), modules);
+  const quantities = assignConcepts(raw, normalised, prelimTargets);
 
   // angle of repose: an angle at which sliding starts is φ, not a general incline
   if (flags.slideOnset) {

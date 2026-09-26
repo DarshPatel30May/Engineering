@@ -2,7 +2,7 @@
  * Personal & Public Transport: friction, simple machines, mechanisms, hydraulics,
  * electrical energy for transport systems.
  */
-import { FormulaDef, v } from './types';
+import { FormulaDef, gVar, v } from './types';
 
 export const transportFormulas: FormulaDef[] = [
   {
@@ -623,5 +623,59 @@ export const transportFormulas: FormulaDef[] = [
     extension: true,
     priority: 1,
   },
-];
 
+  {
+    id: 'energyCost',
+    name: 'Cost of electrical energy',
+    modules: ['transport', 'telecom'],
+    topic: 'Electricity',
+    equation: '\\text{Cost} = E \\times \\text{tariff}',
+    vars: [
+      v('cost', '\\text{Cost}', 'Cost of energy', 'money', { nonNegative: true }),
+      v('E', 'E', 'Energy used (kWh)', 'energy', { concept: 'energy', nonNegative: true }),
+      v('rate', 'r', 'Tariff (price per kWh)', 'tariff', { positive: true }),
+    ],
+    solve: {
+      cost: { expr: '#E \\times #rate', fn: ({ E, rate }) => E * rate },
+      E: { expr: '\\frac{#cost}{#rate}', fn: ({ cost, rate }) => cost / rate },
+      rate: { expr: '\\frac{#cost}{#E}', fn: ({ cost, E }) => cost / E },
+    },
+    aliases: ['cost of electricity', 'running cost', 'tariff', 'cents per kWh', 'dollars per kWh'],
+    when: 'Running cost of electric vehicles, trains or appliances (energy in kWh × price per kWh).',
+    sheet: 'no',
+    source: 'Engineering electricity',
+    hsc: ['Cost to charge an electric vehicle battery'],
+    example: { E: 60 * 3.6e6, rate: 0.3 / 3.6e6 },
+    priority: 2,
+  },
+  {
+    id: 'hillClimb',
+    name: 'Tractive force climbing a slope at constant speed',
+    modules: ['transport'],
+    topic: 'Forces & motion',
+    equation: 'F_t = mg\\sin\\theta + F_r',
+    vars: [
+      v('Ft', 'F_t', 'Tractive (driving) force required', 'force'),
+      v('m', 'm', 'Mass', 'mass', { positive: true }),
+      gVar(),
+      v('theta', '\\theta', 'Slope angle', 'angle', { concept: 'incline', min: 0, max: Math.PI / 2 }),
+      v('Fr', 'F_r', 'Other resistance (rolling, drag)', 'force', { nonNegative: true, constant: 0 }),
+    ],
+    solve: {
+      Ft: { expr: '#m #g \\sin(#theta) + #Fr', fn: ({ m, g, theta, Fr }) => m * g * Math.sin(theta) + Fr },
+      m: { expr: '\\frac{#Ft - #Fr}{#g \\sin(#theta)}', fn: ({ Ft, Fr, g, theta }) => (Ft - Fr) / (g * Math.sin(theta)) },
+      g: { expr: '\\frac{#Ft - #Fr}{#m \\sin(#theta)}', fn: ({ Ft, Fr, m, theta }) => (Ft - Fr) / (m * Math.sin(theta)) },
+      theta: { expr: '\\sin^{-1}\\left(\\frac{#Ft - #Fr}{#m #g}\\right)', fn: ({ Ft, Fr, m, g }) => Math.asin((Ft - Fr) / (m * g)) },
+      Fr: { expr: '#Ft - #m #g \\sin(#theta)', fn: ({ Ft, m, g, theta }) => Ft - m * g * Math.sin(theta) },
+    },
+    aliases: ['hill climbing', 'gradient', 'climbing a hill', 'tractive effort up slope'],
+    when: 'Vehicle climbing a hill at constant speed: driving force balances the weight component down the slope plus resistance. Power = F_t × v.',
+    sheet: 'derived',
+    source: 'Engineering mechanics — dynamics',
+    hsc: ['Power required for a bus to climb a hill at constant speed'],
+    example: { m: 1500, theta: (5 * Math.PI) / 180, Fr: 400 },
+    contextOnly: ['transport'],
+    priority: 2,
+  },
+
+];
