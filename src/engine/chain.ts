@@ -63,7 +63,9 @@ function identity(a: string, b: string, q: QuantityId, why: string, unlessKnown?
 export const IDENTITIES: FormulaDef[] = [
   identity('sw', 'sigma', 'stress', 'The working stress is the actual stress in the member under its working load.'),
   identity('sw', 'sigmaB', 'stress', 'The working stress is the maximum bending stress in the member.'),
-  identity('F', 'Wt', 'force', 'The applied load is the weight of the mass (W = mg).'),
+  identity('F', 'Wt', 'force', 'The applied load is the weight of the mass (W = mg).', ['a', 'u', 'v', 's', 'mu', 'incline', 'Ft', 'Fr']),
+  identity('work', 'PE', 'energy', 'Work done lifting the load equals the potential energy gained.'),
+  identity('work', 'KE', 'energy', 'Work done (e.g. by the brakes) equals the change in kinetic energy.'),
   identity('load', 'Wt', 'force', 'The load raised is the weight of the mass.'),
   identity('load', 'F', 'force', 'The load is the output force.'),
   identity('Fw', 'F', 'force', 'The working load is the applied force.'),
