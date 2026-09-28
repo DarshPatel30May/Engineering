@@ -35,7 +35,7 @@ export const MODULE_CATALOG: Record<ModuleId, Category[]> = {
   civil: [
     { title: 'Forces & equilibrium', items: [...T('forces'), ...F('forceX', 'forceY', 'resultant', 'resultantAngle', 'moment', 'weight')] },
     { title: 'Beams & bending', items: [...T('beam'), ...F('bending', 'ssCentral', 'ssUdl', 'cantPoint', 'cantUdl', 'udlTotal', 'sectionModulus', 'bendingZ')] },
-    { title: 'Trusses', items: [...T('truss'), ...F('stress', 'shear')] },
+    { title: 'Trusses & joints', items: [...T('truss'), ...F('stress', 'shear', 'fastenerLoad', 'shearPerBolt', 'bearingStress')] },
     { title: 'Section properties', items: [...T('section', 'centroid'), ...F('Irect', 'yRect', 'Icircle', 'Itube', 'areaCircle', 'areaTube', 'areaRect')] },
     { title: 'Stress & strain', items: F('stress', 'strain', 'youngs', 'youngsCombined', 'hooke', 'shear') },
     { title: 'Material testing & factor of safety', items: [...T('tensile'), ...F('fosUts', 'fosYield', 'fosLoad', 'pctElong', 'pctRA', 'brinell', 'vickers', 'impactEnergy', 'strainEnergy', 'resilience', 'density')] },
@@ -45,7 +45,7 @@ export const MODULE_CATALOG: Record<ModuleId, Category[]> = {
     { title: 'Forces & motion', items: F('newton2', 'weight', 'tractive', 'hillClimb', 'momentum', 'impulse', 'centripetal') },
     { title: 'Kinematics', items: F('suvat1', 'suvat2', 'suvat3', 'suvat4', 'constSpeed') },
     { title: 'Friction', items: [...T('incline'), ...F('friction', 'frictionAngle', 'inclineNormal', 'inclineParallel')] },
-    { title: 'Work, energy & power', items: F('work', 'ke', 'pe', 'workEnergy', 'energyConservation', 'power', 'powerFv', 'rotPower', 'torque', 'efficiency', 'efficiencyEnergy', 'energyTime') },
+    { title: 'Work, energy & power', items: F('work', 'ke', 'pe', 'deltaKE', 'workEnergy', 'energyConservation', 'power', 'powerFv', 'rotPower', 'torque', 'efficiency', 'efficiencyEnergy', 'energyTime') },
     { title: 'Simple machines', items: F('MA', 'VR', 'machineEff', 'leverBalance', 'leverVR', 'pulleyVR') },
     { title: 'Mechanisms (gears, belts, screws)', items: [...T('gear'), ...F('gearRatio', 'gearSpeed', 'gearTorque', 'wheelAxle', 'screwJack')] },
     { title: 'Hydraulics', items: F('pascal', 'pistonArea1', 'pistonArea2', 'hydraulicPressure', 'hydraulicVolume', 'hydraulicVR') },

@@ -64,12 +64,12 @@ function identity(a: string, b: string, q: QuantityId, why: string, unlessKnown?
 export const IDENTITIES: FormulaDef[] = [
   identity('sw', 'sigma', 'stress', 'The working stress is the actual stress in the member under its working load.'),
   identity('sw', 'sigmaB', 'stress', 'The working stress is the maximum bending stress in the member.'),
-  identity('F', 'Wt', 'force', 'The applied load is the weight of the mass (W = mg).', ['a', 'u', 'v', 's', 'mu', 'incline', 'Ft', 'Fr']),
+  identity('F', 'Wt', 'force', 'The applied load is the weight of the mass (W = mg).', ['a', 'u', 'v', 's', 'mu', 'incline', 'Ft', 'Fr', 'Th', 'Drag', 'Lift']),
   identity('work', 'PE', 'energy', 'Work done lifting the load equals the potential energy gained.'),
   identity('work', 'KE', 'energy', 'Work done (e.g. by the brakes) equals the change in kinetic energy.'),
   identity('load', 'Wt', 'force', 'The load raised is the weight of the mass.', ['a', 'u', 'v', 's', 'mu', 'incline', 'Ft', 'Fr']),
   identity('load', 'F', 'force', 'The load is the output force.', ['a', 'u', 'v', 's', 'mu', 'incline', 'Ft', 'Fr']),
-  identity('F', 'Th', 'force', 'The force driving the aircraft is the engine thrust.', undefined, ['aero']),
+  identity('F', 'Th', 'force', 'The force driving the aircraft is the engine thrust.', ['Drag', 'Fr'], ['aero']),
   identity('wingArea', 'A', 'area', 'The area given is the wing (planform) area.', undefined, ['aero']),
   identity('Fw', 'F', 'force', 'The working load is the applied force.'),
   identity('normal', 'Wt', 'force', 'On a horizontal surface the normal reaction equals the weight.', ['incline']),
@@ -83,8 +83,11 @@ export const IDENTITIES: FormulaDef[] = [
   identity('Ft', 'F', 'force', 'The tractive force is the applied driving force.'),
   identity('Th', 'Ft', 'force', 'Thrust is the driving force on the aircraft.'),
   identity('Fr', 'Drag', 'force', 'The resistance to motion is the drag.'),
+  identity('F', 'Ff', 'force', 'The force required is the friction force to be overcome (or the braking force available).', ['a', 'u', 'v', 's', 't', 'Ft', 'Fr']),
   identity('F2', 'Wt', 'force', 'The output piston supports the weight of the load.'),
   identity('F2', 'load', 'force', 'The output piston force is the load raised.'),
+  identity('work', 'dKE', 'energy', 'Work done by the brakes equals the kinetic energy lost.'),
+  identity('Ein', 'dKE', 'energy', 'The energy available for recovery is the kinetic energy lost.'),
   identity('Ein', 'KE', 'energy', 'The energy available (input) is the kinetic energy of the vehicle.'),
 ];
 
@@ -92,6 +95,8 @@ export interface ChainOptions {
   modules?: ModuleId[];
   /** formula ids to exclude */
   exclude?: string[];
+  /** original question text (for situation-specific formulas) */
+  text?: string;
 }
 
 function candidateFormulas(opts: ChainOptions): FormulaDef[] {
@@ -99,6 +104,7 @@ function candidateFormulas(opts: ChainOptions): FormulaDef[] {
   const list = [...FORMULAS, ...IDENTITIES].filter((f) => {
     if (opts.exclude?.includes(f.id)) return false;
     if (f.contextOnly && !f.contextOnly.some((m) => mods.includes(m))) return false;
+    if (f.requiresText && opts.text !== undefined && !f.requiresText.test(opts.text.toLowerCase())) return false;
     return true;
   });
   const modScore = (f: FormulaDef) => (mods.length && f.modules.some((m) => mods.includes(m)) ? 1 : 0);
@@ -164,6 +170,18 @@ export function solveChain(knownIn: Known[], targets: string[], opts: ChainOptio
           }
         }
         if (!ok) continue;
+        // no circular derivations: an input that was itself obtained by an identity from another
+        // input of this same formula carries no new information (e.g. N = W, then θ from N and W)
+        const circular = inputConcepts.some((c) => {
+          const d = best.get(c);
+          return d?.formula.identity && d.inputConcepts.some((ic) => ic !== c && inputConcepts.includes(ic));
+        });
+        // two inputs that are both just aliases of one source (e.g. P_in = P and P_out = P ⇒ η = 1) are circular too
+        const aliasSources = inputConcepts
+          .map((c) => best.get(c))
+          .filter((d) => d?.formula.identity)
+          .map((d) => d!.inputConcepts[0]);
+        if (circular || new Set(aliasSources).size < aliasSources.length) continue;
         // a constant-default variable cannot be "derived" (e.g. do not compute g)
         if (target.constant !== undefined && given.get(target.concept) === undefined && !targets.includes(target.concept)) continue;
         if (cost >= costOf(target.concept) - 1e-9) continue;
@@ -248,7 +266,7 @@ export function consistencyIssues(knownIn: Known[], opts: ChainOptions = {}): Is
   const given = new Map(knownIn.filter((k) => k.source === 'given').map((k) => [k.concept, k.valueSI]));
   const issues: Issue[] = [];
   for (const f of candidateFormulas(opts)) {
-    if (f.identity) continue;
+    if (f.identity || f.contextOnly) continue; // conditional relations (level flight, beam cases…) are not universal
     if (!f.vars.every((vd) => given.has(vd.concept))) continue;
     const first = f.vars[0];
     const inputs: Record<string, number> = {};

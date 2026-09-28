@@ -81,6 +81,8 @@ export interface FormulaDef {
   identity?: boolean;
   /** chain solver: skip this formula if any of these concepts are known */
   unlessKnown?: string[];
+  /** chain solver: only use when the question wording matches (physical situation-specific relations) */
+  requiresText?: RegExp;
 }
 
 export function v(

@@ -1,0 +1,28 @@
+# multi-part / extra data / symbolic
+40e6 | \sigma | (a) A 20 mm × 10 mm steel bar carries an axial load of 8 kN. (b) Calculate the stress in the bar.
+8000/(0.02*0.01)/200e9 | \varepsilon | A 20 mm × 10 mm steel bar, 1.5 m long, carries an axial tensile load of 8 kN. E = 200 GPa. Calculate (i) the stress and (ii) the strain.
+8000/(0.02*0.01)/200e9*1.5 | \Delta L | A 20 mm × 10 mm steel bar, 1.5 m long, carries an axial tensile load of 8 kN. E = 200 GPa. Calculate the stress, the strain and the extension.
+2e6*25e-6 | | σ = 2 MPa, A = 25 mm². Find F.
+300e6/0.0015 | | Determine E given σ = 300 MPa and ε = 0.0015.
+0.0015*2 | | ε = 0.0015 and L = 2 m. Calculate ΔL.
+6/(2+4) | I | V = 6 V, R1 = 2 Ω and R2 = 4 Ω are in series. Find the current.
+12/0.5 | | A current of 0.5 A flows through a lamp connected to a 12 V battery. Calculate the resistance of the lamp.
+0.25**2*100 | | Find the power dissipated in a 100 Ω resistor carrying 250 mA.
+# extra irrelevant numbers
+50000/(Math.PI*0.012**2/4) | | In 2019 a bridge hanger made of 12 mm diameter steel cable, 25 m long, carried a tension of 50 kN. Calculate the stress in the hanger.
+0.5*2000*30**2 | | A 2000 kg van travelling at 30 m/s along a 3 km stretch of highway. Calculate its kinetic energy.
+# wording variety
+10*9.81*3 | | How much potential energy is gained when a 10 kg box is lifted 3 m?
+250*4 | | How much work is done when a force of 250 N moves an object 4 m?
+5000/20 | | What power is developed when 5 kJ of work is done in 20 s?
+(15-5)/4 | | Find the acceleration of a vehicle whose speed increases from 5 m/s to 15 m/s in 4 s.
+0.5*(5+15)*4 | | A vehicle's speed increases uniformly from 5 m/s to 15 m/s in 4 s. How far does it travel?
+(60*1000/3600)*120 | | A train travels at a constant 60 km/h for 2 minutes. How far does it travel?
+0.3*9.81*50 | | A 50 kg crate rests on a horizontal floor. The coefficient of friction is 0.3. What horizontal force is needed to start it sliding?
+1000*9.81*Math.sin(10*Math.PI/180) | | A 1000 kg car is parked on a 10° slope. Calculate the component of its weight acting down the slope.
+2/0.5 | | Calculate the mechanical advantage of a machine that lifts a 2 kN load with an effort of 500 N.
+0.5*1.2*50**2*16*0.4 | | A wing of area 16 m² has a lift coefficient of 0.4 at 50 m/s in air of density 1.2 kg/m³. Calculate the lift.
+0.5*1.225*30**2*0.6*2.5 | | A car has a drag coefficient of 0.6 and a frontal area of 2.5 m². Calculate the drag force at 30 m/s in air of density 1.225 kg/m³.
+Math.asin(Math.sin(30*Math.PI/180)*1.5/1.33) | | A ray of light passes from glass (n = 1.5) into water (n = 1.33) at an angle of incidence of 30°. Calculate the angle of refraction.
+44100*16*2 | | Calculate the bit rate of CD-quality audio sampled at 44.1 kHz with 16 bits per sample and 2 channels.
+2**10 | | How many quantisation levels does a 10-bit ADC have?

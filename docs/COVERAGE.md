@@ -2,7 +2,7 @@
 
 _Generated from `src/engine/formulas` by `npm run coverage-matrix`. Do not edit by hand._
 
-Formulas: **139**, every variable solvable (443 rearrangements, all verified by automated round-trip and dimensional tests).
+Formulas: **143**, every variable solvable (458 rearrangements, all verified by automated round-trip and dimensional tests).
 
 Sheet column: **yes** = expected on the NESA Engineering Studies formulae sheet; **derived** = a rearrangement/combination of sheet formulae; **no** = must be known or derived by the student (HSC-relevant, or marked _extension_). Formula-sheet status is based on the author’s knowledge of the NESA sheet — verify against the current official sheet.
 
@@ -36,7 +36,7 @@ Multi-step tools: **Beam analyser (reactions, SFD, BMD, bending stress)**
 | Section modulus | Z = \fracIy_max | Z Elastic section modulus [m³]; I Second moment of area [m⁴]; y_max Distance from NA to extreme fibre [m] | mm³, cm³, m³, mm⁴, cm⁴, m⁴, mm, cm, m, km | Z = \fracIy_max; I = Z × y_max; y_max = (I)/(Z) | no | Selecting a beam section from tables |
 | Bending stress from section modulus | σ_max = (M)/(Z) | σ_max Maximum bending stress [Pa]; M Bending moment [N·m]; Z Section modulus [m³] | Pa, kPa, MPa, GPa, N/mm², N·mm, N·m, kN·m, mm³, cm³, m³ | σ_max = (M)/(Z); M = σ_max × Z; Z = \fracMσ_max | no | Beam selection from section tables |
 
-### Trusses
+### Trusses & joints
 
 Multi-step tools: **Truss solver (method of joints)**
 
@@ -44,6 +44,9 @@ Multi-step tools: **Truss solver (method of joints)**
 |---|---|---|---|---|---|---|
 | Engineering stress (axial) | σ = (F)/(A) | σ Stress (tensile or compressive) [Pa]; F Axial force (tension or compression) [N]; A Cross-sectional area [m²] | Pa, kPa, MPa, GPa, N/mm², N, kN, MN, mm², cm², m² | σ = (F)/(A); F = σ × A; A = (F)/(σ) | yes | Stress in a truss member once its force is known; Minimum diameter of a tie rod for an allowable stress; Stress in a cable of a suspension bridge |
 | Shear stress (pins, bolts, rivets) | τ = (F)/(nA) | τ Shear stress [Pa]; F Shear force (load) [N]; n Number of shear planes (1 = single, 2 = double shear) [–]; A Area of one shear plane [m²] | Pa, kPa, MPa, GPa, N/mm², N, kN, MN, mm², cm², m² | τ = (F)/(n A); F = τ n A; n = (F)/(τ A); A = (F)/(n τ) | derived | Shear stress in a truss pin joint in double shear; Minimum rivet diameter |
+| Load shared equally between fasteners | F_b = (F)/(N) | F_b Load carried by each bolt / rivet / pin [N]; F Total load on the joint [N]; N Number of bolts / rivets / pins sharing the load [–] | N, kN, MN | F_b = (F)/(N); F = F_b × N; N = (F)/(F_b) | derived | Shear stress in each of three bolts in a lap joint; Minimum number of rivets for an allowable shear stress |
+| Shear stress in each fastener | τ = (F_b)/(nA) | τ Shear stress in each fastener [Pa]; F_b Load carried by each fastener [N]; n Shear planes per fastener (1 = single shear, 2 = double shear) [–]; A Cross-sectional area of one fastener [m²] | Pa, kPa, MPa, GPa, N/mm², N, kN, MN, mm², cm², m² | τ = (F_b)/(n A); F_b = τ n A; n = (F_b)/(τ A); A = (F_b)/(n τ) | derived | Shear stress in each M16 bolt of a bracket connection |
+| Bearing (crushing) stress of a bolt on a plate _(extension)_ | σ_br = (F_b)/(dt) | σ_br Bearing stress between bolt and plate [Pa]; F_b Load carried by each fastener [N]; d Bolt diameter [m]; t Plate thickness [m] | Pa, kPa, MPa, GPa, N/mm², N, kN, MN, mm, cm, m, km | σ_br = (F_b)/(d t); F_b = σ_br d t; d = \fracF_bσ_br t; t = \fracF_bσ_br d | no | Bearing stress of a bolt in a 12 mm plate |
 
 ### Section properties
 
@@ -139,6 +142,7 @@ Multi-step tools: **Inclined plane with friction**
 | Work done | W = Fs | W Work done [J]; F Force (in direction of motion) [N]; s Displacement [m] | J, kJ, MJ, kWh, N, kN, MN, mm, cm, m, km | W = F × s; F = (W)/(s); s = (W)/(F) | yes | Work done lifting a load with a crane; Work done by braking force |
 | Kinetic energy | KE = (1)/(2)mv^2 | KE Kinetic energy [J]; m Mass [kg]; v Speed [m/s] | J, kJ, MJ, kWh, g, kg, t, m/s, km/h | KE = (1)/(2) × m × v^2; m = (2 KE)/(v^2); v = √((2 KE)/(m)) | yes | Energy dissipated by brakes stopping a vehicle; Kinetic energy of a train |
 | Gravitational potential energy | PE = mgh | PE Potential energy [J]; m Mass [kg]; g Gravitational acceleration [m/s²]; h Height (vertical change) [m] | J, kJ, MJ, kWh, g, kg, t, m/s², mm, cm, m, km | PE = m × g × h; m = (PE)/(g h); g = (PE)/(m h); h = (PE)/(m g) | yes | Energy to raise a lift car; Vehicle climbing a hill |
+| Change in kinetic energy | Δ KE = (1)/(2)m(u^2 - v^2) | Δ KE Kinetic energy lost (positive when slowing down) [J]; m Mass [kg]; u Initial speed [m/s]; v Final speed [m/s] | J, kJ, MJ, kWh, g, kg, t, m/s, km/h | Δ KE = (1)/(2) m (u^2 - v^2); m = (2 Δ KE)/(u^2 - v^2); u = √(v^2 + (2 Δ KE)/(m)); v = √(u^2 - (2 Δ KE)/(m)) | derived | Heat generated in the brakes as a car slows; Energy recovered by regenerative braking |
 | Work–energy theorem (braking / accelerating) | Fs = (1)/(2)m(u^2 - v^2) | F Braking (resisting) force [N]; s Distance over which force acts [m]; m Mass [kg]; u Initial speed [m/s]; v Final speed [m/s] | N, kN, MN, mm, cm, m, km, g, kg, t, m/s, km/h | F = (m (u^2 - v^2))/(2 s); s = (m (u^2 - v^2))/(2 F); m = (2 F s)/(u^2 - v^2); u = √(v^2 + (2 F s)/(m)); v = √(u^2 - (2 F s)/(m)) | derived | Average braking force to stop a car in a given distance; Stopping distance from braking force |
 | Energy conservation (no losses): KE = PE | (1)/(2)mv^2 = mgh \Rightarrow v = √(2gh) | v Speed at the bottom [m/s]; g Gravitational acceleration [m/s²]; h Height dropped [m] | m/s, km/h, m/s², mm, cm, m, km | v = √(2 × g × h); g = (v^2)/(2 h); h = (v^2)/(2 g) | derived | Speed of a vehicle at the bottom of a slope with no friction |
 | Power (rate of doing work) | P = (W)/(t) | P Power [W]; W Work done / energy transferred [J]; t Time [s] | mW, W, kW, MW, J, kJ, MJ, kWh, μs, ms, s, min, h | P = (W)/(t); W = P × t; t = (W)/(P) | yes | Power of a lift motor; Average braking power |

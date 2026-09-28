@@ -57,10 +57,25 @@ function extractBeam(text: string, qs: RawQuantity[]): SpecialResult | undefined
   const points: BeamInput['points'] = [];
   const pendingForces: RawQuantity[] = [];
   const forces = qs.filter(forceQ);
-  for (const f of forces) {
-    const after = text.slice(f.end, f.end + 70);
+  // "at 2 m" with the reference point stated later in the sentence (or implied: from the left)
+  const posNoRef = /^[^.;]{0,25}?\bat\s+(?:a\s+distance\s+of\s+)?([\d.]+)\s*(mm|m)\b(?!\s*(?:,|and)\s*[\d.]+\s*m\b)(?!\s+(?:from|to the))/i;
+  for (const [fi, f] of forces.entries()) {
+    // only look at the text up to the next load, so one load never takes another load's position
+    const nextF = forces[fi + 1];
+    const after = text.slice(f.end, Math.min(f.end + 70, nextF ? nextF.start : Infinity));
     let x: number | undefined;
     const pm = posRe.exec(after);
+    if (!pm) {
+      const pn = posNoRef.exec(after);
+      if (pn) {
+        const d = lenToM(pn[1], pn[2]);
+        const rest = text.slice(f.end, text.indexOf('.', f.end + 1) > 0 ? text.indexOf('.', f.end + 1) : undefined).toLowerCase();
+        const fromRight = /from (?:the )?(?:right|b\b|support b|right[- ]hand)/.test(rest) && !/from (?:the )?(?:left|a\b|support a)/.test(rest);
+        x = fromRight ? L - d : d;
+        const lq = qs.find((q) => lenQ(q) && q.start >= f.end && q.start <= f.end + 40 && Math.abs(q.valueSI - d) < 1e-12);
+        if (lq) used.add(lq);
+      }
+    }
     const mm = midRe.exec(after);
     const em = endRe.exec(after);
     const firstIdx = (m: RegExpExecArray | null) => (m ? m.index + m[0].length : Infinity);
@@ -69,7 +84,9 @@ function extractBeam(text: string, qs: RawQuantity[]): SpecialResult | undefined
       { m: mm, k: 'mid' },
       { m: em, k: 'end' },
     ].filter((c) => c.m).sort((a, b) => firstIdx(a.m) - firstIdx(b.m))[0];
-    if (cand?.k === 'pos' && pm) {
+    if (x !== undefined) {
+      /* position already found */
+    } else if (cand?.k === 'pos' && pm) {
       const d = lenToM(pm[1], pm[2]);
       const ref = pm[3].toLowerCase();
       const fromRight = /right|b\b|support b/.test(ref) || (cantilever && ((/fixed|wall/.test(ref) && fixedRight) || (/free/.test(ref) && !fixedRight)));
@@ -166,7 +183,12 @@ function extractBeam(text: string, qs: RawQuantity[]): SpecialResult | undefined
 // ——— Resistor network ———
 function extractCircuit(text: string, qs: RawQuantity[]): SpecialResult | undefined {
   const lower = text.toLowerCase();
-  const rs = qs.filter((q) => is(q, 'Ω') && q.unit !== '');
+  let rs = qs.filter((q) => is(q, 'Ω') && q.unit !== '');
+  // "three 10 Ω resistors" → 10, 10, 10
+  rs = rs.flatMap((r) => {
+    const cnt = qs.find((c) => c.unit === '' && c.end <= r.start && r.start - c.end <= 2 && Number.isInteger(c.value) && c.value >= 2 && c.value <= 20);
+    return cnt ? Array.from({ length: cnt.value }, (_, k) => ({ ...r, index: r.index + k / 100 })) : [r];
+  });
   if (rs.length < 2 || !/series|parallel/.test(lower)) return;
   const notes: string[] = [];
   const vals = rs.map((r) => r.valueSI);
@@ -308,11 +330,32 @@ function extractCables(text: string, qs: RawQuantity[]): SpecialResult | undefin
   };
 }
 
+// ——— Two forces at a given angle to each other ———
+function extractTwoForces(text: string, qs: RawQuantity[]): SpecialResult | undefined {
+  const lower = text.toLowerCase();
+  if (!/resultant|equilibrant|combined force|single force/.test(lower)) return;
+  const fs = qs.filter(forceQ);
+  if (fs.length !== 2) return;
+  let angle: number | undefined;
+  if (/right angles?|perpendicular|90\s*°/.test(lower)) angle = 90;
+  const aq = qs.find((q) => q.unit === '°' && /to each other|between (them|the forces|the two)|apart/.test(text.slice(q.end, q.end + 30).toLowerCase() + text.slice(Math.max(0, q.start - 30), q.start).toLowerCase()));
+  if (aq) angle = aq.value;
+  if (angle === undefined) return;
+  return {
+    type: 'forces',
+    forces: [
+      { name: 'F_1', F: fs[0].valueSI, angle: 0 },
+      { name: 'F_2', F: fs[1].valueSI, angle },
+    ],
+    notes: [`F₁ taken along the x-axis and F₂ at ${angle}° to it.`],
+  };
+}
+
 export function detectSpecial(text: string, qs: RawQuantity[], modules: ModuleId[], flags: Record<string, boolean>): SpecialResult | undefined {
   const lower = text.toLowerCase();
   void modules;
   if (/force in (each|every|all)?\s*(of the )?members?|member forces|forces in (all )?the members|method of joints|method of sections/.test(lower) && /truss|frame/.test(lower)) {
     return { type: 'truss', notes: ['Truss geometry cannot be read reliably from text. Enter the joints, members, supports and loads in the Truss Solver.'] };
   }
-  return extractNumbase(text) ?? extractLever(text, qs) ?? extractLogic(text) ?? extractCircuit(text, qs) ?? extractBeam(text, qs) ?? extractIncline(text, qs, flags) ?? extractGear(text, qs) ?? extractCables(text, qs);
+  return extractNumbase(text) ?? extractLever(text, qs) ?? extractLogic(text) ?? extractCircuit(text, qs) ?? extractBeam(text, qs) ?? extractIncline(text, qs, flags) ?? extractGear(text, qs) ?? extractCables(text, qs) ?? extractTwoForces(text, qs);
 }

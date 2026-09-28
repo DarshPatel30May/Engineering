@@ -17,6 +17,8 @@ export interface RawQuantity {
   end: number;
   /** symbol written immediately before "=" (e.g. "F" in "F = 8 kN") */
   symbol?: string;
+  /** number written as a word ("three bolts") */
+  fromWord?: boolean;
   sf: number;
 }
 
@@ -40,7 +42,12 @@ export function normaliseText(src: string): string {
     s = s.replace(/(^|[^\d.])(\d{1,3}) (\d{3})(?![\d.])/g, '$1$2$3');
   }
   s = s.replace(/(\d*\.?\d+)\s*:\s*1\b(?!\d)/g, '$1');
+  // metric fastener designations: "M16 bolts" → "bolts of 16 mm diameter"
+  s = s.replace(/\bM(\d{1,2}(?:\.\d)?)\s+((?:high[- ]strength\s+|steel\s+|hex\s+)?(?:bolts?|screws?|studs?|fasteners?|rivets?|pins?))\b/g, '$2 of $1 mm diameter');
+  s = s.replace(/\bM(\d{1,2}(?:\.\d)?)\b(?=[^.]{0,20}\b(?:bolt|screw|stud|thread|nut))/g, '$1 mm diameter');
   s = s.replace(/per cent/gi, '%');
+  // durations written in words
+  s = s.replace(/\bhalf an hour\b/gi, '0.5 h').replace(/\b(?:one|an|a)\s+(hour|minute|second|day)\b(?!\s*(?:per|each))/gi, (_m, u: string) => `1 ${({ hour: 'h', minute: 'min', second: 's', day: 'h×24' } as Record<string, string>)[u.toLowerCase()]}`).replace(/1 h×24/g, '24 h');
   s = s.replace(/degrees?(?![a-z])/gi, '°').replace(/\bdeg\b/gi, '°');
   s = s.replace(/°\s*C\b/g, ' degC');
   s = s.replace(/\bohms?\b/gi, 'Ω');
@@ -108,6 +115,7 @@ export function extractQuantities(text: string): RawQuantity[] {
     if (/^\s*$/.test(text.slice(text.lastIndexOf('\n', start) + 1, start)) && /^\d+[.)]\s/.test(text.slice(start, start + 4))) continue;
     const value = parseFloat(numText);
     if (!isFinite(value)) continue;
+
     const u = readUnit(text, end);
     let unit = '';
     if (u && !(u.unit === 'degC')) {
@@ -115,6 +123,8 @@ export function extractQuantities(text: string): RawQuantity[] {
       end += u.len;
     }
     if (text.slice(end, end + 5) === ' degC') continue; // temperatures are not used by any formula
+    // calendar years ("In 2019 a bridge…") are not data
+    if (!unit && /^(19|20)\d\d$/.test(numText) && /\b(in|since|by|from|year|during)\s*$/i.test(before)) continue;
     let dim: Dim | null = null;
     let factor = 1;
     if (unit) {
@@ -143,7 +153,39 @@ export function extractQuantities(text: string): RawQuantity[] {
       sf: countSigFigs(numText),
     });
   }
-  return mergeRectangles(text, out);
+  return mergeRectangles(text, addNumberWords(text, inheritRangeUnits(text, out)));
+}
+
+/** "from 0 to 100 km/h", "between 5 and 15 m/s": the first number takes the second number's unit. */
+function inheritRangeUnits(text: string, qs: RawQuantity[]): RawQuantity[] {
+  for (let i = 0; i < qs.length - 1; i++) {
+    const a = qs[i];
+    const b = qs[i + 1];
+    if (a.unit || !b.unit || a.symbol) continue;
+    if (!/^\s*(?:to|and|-|–)\s*$/i.test(text.slice(a.end, b.start))) continue;
+    if (!/(from|between)\s*$/i.test(text.slice(Math.max(0, a.start - 9), a.start))) continue;
+    qs[i] = { ...a, unit: b.unit, dim: b.dim, valueSI: a.value * (b.valueSI / b.value || 0) };
+  }
+  return qs;
+}
+
+const NUMBER_WORDS: Record<string, number> = {
+  two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+  fifteen: 15, sixteen: 16, twenty: 20, thirty: 30, forty: 40, fifty: 50, hundred: 100, single: 1, double: 2, pair: 2,
+};
+
+/** Counts written in words ("three bolts", "four supporting ropes", "a pair of pulleys"). */
+function addNumberWords(text: string, qs: RawQuantity[]): RawQuantity[] {
+  const extra: RawQuantity[] = [];
+  const re = /\b(two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|sixteen|twenty|thirty|forty|fifty|hundred)\b(?!\s*(?:times|fold|thirds?|quarters?|halves|-))/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    const start = m.index;
+    const end = start + m[0].length;
+    if (qs.some((q) => q.start <= start && q.end >= end)) continue;
+    extra.push({ index: 0, numText: m[0], value: NUMBER_WORDS[m[1].toLowerCase()], unit: '', valueSI: NUMBER_WORDS[m[1].toLowerCase()], dim: null, start, end, sf: 12, fromWord: true });
+  }
+  return [...qs, ...extra].sort((a, b) => a.start - b.start).map((q, i) => ({ ...q, index: i }));
 }
 
 /** "300 mm × 300 mm" or "20 mm by 10 mm" → one area quantity. */

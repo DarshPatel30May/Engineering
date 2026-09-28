@@ -92,6 +92,8 @@ function candidateConcepts(q: RawQuantity): Concept[] {
   }
   if (q.unit === '%') return CONCEPTS.filter((c) => ['ratio', 'percent'].includes(getQuantity(c.quantity).id));
   if (q.unit === '°') return CONCEPTS.filter((c) => getQuantity(c.quantity).angle);
+  if (/^div/i.test(q.unit)) return CONCEPTS.filter((c) => c.id === 'divsH' || c.id === 'divsV');
+  if (/^bits?$/.test(q.unit)) return CONCEPTS.filter((c) => ['count', 'data'].includes(getQuantity(c.quantity).id));
   if (q.unit === 'dB') return CONCEPTS.filter((c) => c.quantity === 'decibel');
   return CONCEPTS.filter((c) => {
     const k = getQuantity(c.quantity);
@@ -126,7 +128,15 @@ const CONTEXT_REQUIRED: Record<string, RegExp> = {
   F2: /piston|hydraulic|cylinder|pascal|plunger|ram/,
   Ffail: /fail|break|ultimate load|factor of safety|safe/,
   Fw: /working load|safe|factor of safety/,
-  Lift: /lift|aircraft|wing|glid|flight/,
+  Lift: /aircraft|aeroplane|airplane|wing|glid|flight|aerofoil|airfoil|lift coefficient|lift force|helicopter|drone/,
+  U: /strain energy|elastic|spring|stretch|extension|resilience/,
+  Fr: /vehicle|car\b|train|bus\b|truck|motion|rolling|air resistance|resistance to motion|tractive|aircraft|drag|bicycle|cyclist/,
+  linkLength: /fibre|fiber|signal|attenuat|\bdb\b|link|repeater/,
+  alpha: /fibre|fiber|signal|attenuat|\bdb\b|link/,
+  h1: /charpy|izod|pendulum|impact/,
+  h2: /charpy|izod|pendulum|impact/,
+  impactE: /charpy|izod|pendulum|impact/,
+  Ff: /friction|μ|mu\b|coefficient|slid|brak|grip/,
   Th: /thrust|aircraft|engine|jet|propel/,
   Drag: /drag|aircraft|air resistance|aerodynamic/,
 };
@@ -138,20 +148,27 @@ function scoreConcept(q: RawQuantity, c: Concept, textLower: string, all: RawQua
       const kEnd = pos + kw.length;
       let gap: number;
       let after = false;
+      const numEnd = q.start + q.numText.length;
       if (kEnd <= q.start) gap = q.start - kEnd;
       else if (pos >= q.end) {
         gap = pos - q.end;
         after = true;
+      } else if (pos >= numEnd) {
+        gap = 0; // keyword begins inside the unit, e.g. "16 bits per sample"
+        after = true;
       } else continue;
       if (gap > (after ? 30 : 90)) continue;
-      const lo = after ? q.end : kEnd;
+      const lo = after ? Math.min(q.end, pos) : kEnd;
       const hi = after ? pos : q.start;
       const between = textLower.slice(lo, hi);
       // sentence boundary (a full stop not part of a decimal) between keyword and number
       if (/\.(\s|$)|\?|;/.test(between)) continue;
       const intervening = all.filter((o) => o !== q && o.start >= lo && o.end <= hi).length;
+      // a keyword written straight after another number belongs to that number ("12 mm diameter …, 25 m long")
+      const ownedByOther = !after && all.some((o) => o !== q && o.start < pos && pos <= o.end + 2 && pos - o.end < q.start - kEnd);
       let s = (1 + Math.min(kw.length, 30) / 8) * (1 - gap / 100) * Math.pow(0.35, intervening);
       if (after) s *= 0.85;
+      if (ownedByOther) s *= 0.3;
       best = Math.max(best, s);
     }
   }
@@ -208,6 +225,15 @@ function symbolTarget(norm: string, clauseStart: number, assigned: Set<string>, 
   return cands.sort((a, b) => score(b.id) - score(a.id))[0].id;
 }
 
+/** Phrase patterns that name an unknown unambiguously (checked before keyword scoring). */
+const TARGET_PATTERNS: [RegExp, string][] = [
+  [/^\s*(?:the\s+)?(?:minimum\s+|required\s+)?length of (?:a|an|the)?[^,.;]{0,30}?(?:antenna|dipole|aerial|monopole)/, 'antennaLength'],
+  [/^\s*(?:the\s+)?(?:shear stress|stress) (?:on|in) each (?:bolt|rivet|pin|screw)/, 'tau'],
+  [/^\s*(?:the\s+)?(?:load|force) (?:on|in|carried by) each (?:bolt|rivet|pin|screw)/, 'Fbolt'],
+  [/^\s*(?:the\s+)?(?:angle of (?:the\s+)?(?:ramp|incline|slope|plane|hill))/, 'incline'],
+  [/^\s*(?:the\s+)?(?:number of (?:bolts|rivets|pins|screws))/, 'nFasteners'],
+];
+
 export function findTargets(norm: string, assigned: Set<string>, modules: ModuleId[]): string[] {
   const lower = norm.toLowerCase();
   const targets: string[] = [];
@@ -218,10 +244,12 @@ export function findTargets(norm: string, assigned: Set<string>, modules: Module
     // stop at "if/given/when/using" subordinate parts which usually describe data
     const whole = m[2].split(/\b(?:if|given that|given|when|using|assuming|where|for a|required for)\b/)[0];
     // "power and resistance" → two targets
-    const parts = whole.split(/\s+and\s+(?:the\s+|its\s+)?|,\s*/).filter((p) => p.trim().length > 1);
+    const parts = whole.split(/\s+and\s+(?:the\s+|its\s+)?|,\s*/).filter((p) => p.trim().length > 0);
     for (const [pi, clause] of parts.entries()) {
     let best: { id: string; score: number } | null = null;
-    for (const c of CONCEPTS) {
+    const pat = TARGET_PATTERNS.find(([re]) => re.test(clause));
+    if (pat) best = { id: pat[1], score: 100 };
+    for (const c of pat ? [] : CONCEPTS) {
       for (const kw of c.keywords) {
         const occ = occurrences(clause, kw);
         if (!occ.length) continue;
@@ -231,6 +259,7 @@ export function findTargets(norm: string, assigned: Set<string>, modules: Module
         if (verb === 'how many' && getQuantity(c.quantity).id === 'count') score += 6;
         if (assigned.has(c.id)) score -= 12;
         if (modules.length && [...(CONCEPT_MODULES.get(c.id) ?? [])].some((mm) => modules.includes(mm))) score += 3;
+        if (CONTEXT_REQUIRED[c.id] && !CONTEXT_REQUIRED[c.id].test(lower)) score -= 12;
         if (c.id === 'glideDist' && !modules.includes('aero')) score -= 20;
         if (!best || score > best.score) best = { id: c.id, score };
       }
@@ -265,10 +294,17 @@ export function assignConcepts(quantities: RawQuantity[], norm: string, likelyTa
   triples.sort((a, b) => b.s - a.s);
   const byQ = new Map<number, string>();
   const taken = new Set<string>();
+  const takenValue = new Map<string, number>();
   for (const t of triples) {
-    if (byQ.has(t.q.index) || taken.has(t.c)) continue;
+    if (byQ.has(t.q.index)) continue;
+    if (taken.has(t.c)) {
+      // the same value stated twice for the same thing (e.g. two 12 mm thick plates) — allow the duplicate
+      const tv = takenValue.get(t.c)!;
+      if (!(Math.abs(tv - t.q.valueSI) <= 1e-12 * Math.max(1, Math.abs(tv)))) continue;
+    }
     byQ.set(t.q.index, t.c);
     taken.add(t.c);
+    takenValue.set(t.c, t.q.valueSI);
   }
   return quantities.map((q) => {
     const list = cands.get(q.index) ?? [];
@@ -284,15 +320,63 @@ function detectFlags(lower: string): Record<string, boolean> {
   return {
     fromRest: /from rest|starts? from rest|initially at rest|from a standstill|stationary start/.test(lower),
     toRest: /to rest|(comes?|brought|bring|brings) to (a )?(stop|rest|halt)|stops|to a stop|to a standstill|halts|to stop|stopping|to come to rest|pulls up/.test(lower),
-    doubleShear: /double shear/.test(lower),
+    doubleShear: /double shear|clevis|fork(ed)? (end|joint)|two shear planes|sandwiched between|between two (plates|straps|cover plates)|double cover|double strap|butt joint with two/.test(lower),
     singleShear: /single shear/.test(lower),
     level: /straight and level|level flight|cruis/.test(lower),
     constantSpeed: /(constant|steady|uniform) (speed|velocity)|without accelerating|at a constant rate/.test(lower),
     slideOnset: /(about|starts?|begins?|just) to slide|on the point of sliding|angle of repose|impending/.test(lower),
     halfWave: /half[- ]wave|dipole/.test(lower),
     quarterWave: /quarter[- ]wave|monopole|whip/.test(lower),
-    roundTrip: /(round trip|up and back|up to .* and back|to the satellite and back|uplink and downlink|return journey)/.test(lower),
+    roundTrip: /round[- ]trip|\band back\b|there and back|uplink and downlink|return journey|up and down|to .{0,80} and (?:then )?(?:back|return)/.test(lower),
+    ideal: /no friction|frictionless|without friction|ideal (machine|pulley|lever|system)|neglect(ing)? friction|ignore friction|100\s*% efficient|assume no losses|no losses/.test(lower),
   };
+}
+
+/**
+ * Structural wording rules that keyword proximity alone cannot resolve:
+ *  - "from A to B" pairs (speeds, voltages, powers, lengths)
+ *  - lever arms "x m from the fulcrum" attributed to the nearest load/effort
+ */
+function applyPairRules(qs: QtyAssignment[], text: string, lower: string) {
+  const kindOf = (q: QtyAssignment) => (q.dim ? q.dim.join(',') : 'none');
+  const PAIRS: Record<string, [string, string]> = {
+    '1,0,-1,0': ['u', 'v'],
+    '2,1,-3,-1': ['Vin', 'Vout'],
+    '2,1,-3,0': ['Pin', 'Pout'],
+  };
+  for (let i = 0; i < qs.length - 1; i++) {
+    const a = qs[i];
+    const b = qs[i + 1];
+    if (kindOf(a) !== kindOf(b) || !a.dim) continue;
+    const between = text.slice(a.end, b.start);
+    const before = text.slice(Math.max(0, a.start - 6), a.start).toLowerCase();
+    if (!/^\s*to\s*$/i.test(between) || !/from\s*$/.test(before)) continue;
+    let pair = PAIRS[kindOf(a)];
+    if (kindOf(a) === '1,0,0,0' && /gauge length|fracture|final length/.test(lower)) pair = ['L0', 'Lf'];
+    if (kindOf(a) === '2,1,-3,-1' && !/amplif|gain|decibel|db\b|attenuat/.test(lower)) pair = undefined as never;
+    if (!pair) continue;
+    a.concept = pair[0];
+    b.concept = pair[1];
+    a.confidence = b.confidence = 'high';
+  }
+  // two refractive indices written as "(n = 1.5) … (n = 1.33)": first is medium 1, second is medium 2
+  const ns = qs.filter((q) => !q.unit && (q.symbol === 'n' || q.concept === 'n1' || q.concept === 'n2') && q.value >= 1 && q.value < 4);
+  if (ns.length === 2 && !/cladding|core/.test(lower)) {
+    ns[0].concept = 'n1';
+    ns[1].concept = 'n2';
+    ns.forEach((q) => (q.confidence = 'high'));
+  }
+  // lever arms
+  for (const q of qs) {
+    if (!q.dim || q.dim.join(',') !== '1,0,0,0') continue;
+    if (!/^\s*(?:m|mm|cm)?\s*from\s+the\s+(fulcrum|pivot|hinge)/i.test(text.slice(q.end, q.end + 30))) continue;
+    const pre = lower.slice(Math.max(0, q.start - 70), q.start);
+    const li = Math.max(pre.lastIndexOf('load'), pre.lastIndexOf('weight'));
+    const ei = pre.lastIndexOf('effort');
+    if (li < 0 && ei < 0) continue;
+    q.concept = ei > li ? 'effortArm' : 'loadArm';
+    q.confidence = 'high';
+  }
 }
 
 export function interpret(text: string): Interpretation {
@@ -316,12 +400,14 @@ export function interpret(text: string): Interpretation {
       notes.push('The angle at which sliding just begins is the angle of friction φ (μ = tan φ).');
     }
   }
+  applyPairRules(quantities, normalised, lower);
   const assignedSet = new Set(quantities.map((q) => q.concept).filter(Boolean) as string[]);
-  const targets = findTargets(normalised, assignedSet, modules);
+  const targets = findTargets(normalised, assignedSet, modules).map((t) => (flags.slideOnset && (t === 'incline' || t === 'theta') ? 'phi' : t));
   // antenna type
   if (targets.includes('antennaLength')) notes.push(flags.quarterWave ? 'Quarter-wave antenna: L = λ/4.' : 'Assuming a half-wave dipole: L = λ/2.');
 
   for (const q of special ? [] : quantities) {
+    if (q.fromWord && !q.concept) continue; // a number word that does not label a quantity (e.g. "three resistors")
     if (!q.concept) ambiguities.push(`Could not decide what ${q.numText}${q.unit ? ' ' + q.unit : ''} represents — assign it below.`);
     else if (q.confidence === 'low') ambiguities.push(`${q.numText}${q.unit ? ' ' + q.unit : ''} was read as ${getConcept(q.concept)?.name.toLowerCase()} (low confidence) — check it.`);
   }

@@ -1,0 +1,43 @@
+# Structures & materials
+40000/(6*Math.PI*0.01**2/4) | | A steel plate is joined to a bracket using six 10 mm diameter rivets. The joint transmits a force of 40 kN. Determine the shear stress in each rivet.
+(15000/2)/(2*Math.PI*0.008**2) | | A fork joint uses two 16 mm diameter pins in double shear to carry a load of 15 kN shared equally. Calculate the shear stress in each pin.
+50000/(Math.PI*(0.06**2-0.05**2)/4) | | A hollow steel column has an external diameter of 60 mm and an internal diameter of 50 mm. It supports an axial compressive load of 50 kN. Calculate the stress in the column.
+(10000*2)/(Math.PI*0.005**2*205e9) | | A 2 m long steel wire of 10 mm diameter supports a 10 kN load. Taking E as 205 GPa, determine the elongation of the wire.
+250e6/(80e6) | | A structural member has a yield stress of 250 MPa and the working stress is 80 MPa. Calculate the factor of safety.
+(80e3)/(400e6/4) | | A tie must carry 80 kN. The steel has a UTS of 400 MPa and a factor of safety of 4 is required. Calculate the minimum cross-sectional area.
+(8000*1.5)*0.075/(0.05*0.15**3/12) | \sigma_{max} | A timber cantilever 1.5 m long, 50 mm wide and 150 mm deep, carries a point load of 8 kN at its free end. Calculate the maximum bending stress.
+25000 | R_A | A 10 m simply supported beam carries a uniformly distributed load of 5 kN/m over its entire span. Determine the reactions at the supports.
+62500 | M_{max} | A 10 m simply supported beam carries a uniformly distributed load of 5 kN/m over its entire span. Calculate the maximum bending moment.
+(0.052-0.05)/0.05 | | A tensile test specimen has a gauge length of 50 mm. After fracture the gauge length is 52 mm. Calculate the percentage elongation.
+1000*9.81*6 | | A water tank is 6 m deep. Calculate the water pressure at the bottom of the tank.
+Math.hypot(300,400) | | Two forces of 300 N and 400 N act at right angles to each other. Calculate the magnitude of the resultant.
+# Transport
+(25-0)/10 | | A train accelerates uniformly from rest to 90 km/h in 10 s. Calculate the acceleration.
+0.5*2.5*10**2 | | A car accelerates from rest at 2.5 m/s² for 10 s. Calculate the distance travelled.
+0.6*800*9.81 | | A 800 kg car is parked on a level road. If μ = 0.6, find the maximum friction force.
+Math.atan(0.4) | | Determine the angle of repose for a surface with a coefficient of friction of 0.4.
+(1200*9.81*15)/30 | | A lift raises a 1200 kg load through 15 m in 30 s. Calculate the power required.
+2*Math.PI*2400/60*95 | | An electric motor runs at 2400 rpm and produces a torque of 95 N·m. Calculate the output power.
+1800/(1800/0.75) | | A motor with an output of 1.8 kW has an input of 2.4 kW. Calculate the efficiency.
+2400/0.75 | | A motor has an efficiency of 75% and an output power of 2.4 kW. Calculate the input power.
+(600*0.2)/0.8 | | A lever has a load of 600 N placed 0.2 m from the fulcrum. Calculate the effort needed at 0.8 m from the fulcrum.
+1500*9.81/6 | | A mass of 1500 kg is lifted by a pulley system with 6 supporting rope segments. Assuming no friction, calculate the effort required.
+400*(50/20)**2 | | A brake master cylinder has a diameter of 20 mm and each slave cylinder has a diameter of 50 mm. If the pedal applies 400 N to the master cylinder, calculate the force at each slave cylinder.
+0.5*1000*(20**2-10**2) | | A 1000 kg car slows from 20 m/s to 10 m/s. Calculate the loss of kinetic energy.
+60*0.25 | | An electric vehicle uses 60 kWh of energy. Electricity costs 25 c/kWh. What is the cost?
+# Aero
+80000*9.81 | | A passenger aircraft of mass 80 t is in straight and level flight. Calculate the lift required.
+(80000*9.81)/200 | | A passenger aircraft of mass 80 t has a wing area of 200 m². Calculate the wing loading.
+3000*16 | | A glider with a lift-to-drag ratio of 16 starts at an altitude of 3000 m. How far can it glide?
+Math.sqrt(2*2000/1.225) | | A pitot tube measures a dynamic pressure of 2 kPa. Calculate the airspeed if the air density is 1.225 kg/m³.
+30000*220 | | An aircraft engine produces 30 kN of thrust while flying at 220 m/s. Calculate the thrust power.
+(30000-5000)/10000 | | An aircraft of mass 10 000 kg has an engine thrust of 30 kN and a drag of 5 kN during take-off. Calculate its acceleration.
+# Telecom
+3e8/(4*433e6) | | Calculate the length of a quarter-wave antenna for a frequency of 433 MHz.
+3e8/5 | | What is the frequency of a radio wave with a wavelength of 5 m?
+1/(4*0.2e-3) | | A waveform on an oscilloscope has a period of 4 divisions with a timebase of 0.2 ms/div. Calculate the frequency.
+20*Math.log10(5/0.05) | | An amplifier increases the signal voltage from 50 mV to 5 V. Calculate the voltage gain in dB.
+(2*36000e3)/3e8 | | Calculate the time taken for a signal to travel to a satellite at an altitude of 36 000 km and back.
+240/(20+40) | I | A 20 Ω and a 40 Ω resistor are connected in series across a 240 V supply. Calculate the current.
+(24**2)/(1/(1/6+1/12)) | P | A 6 Ω resistor and a 12 Ω resistor are connected in parallel to a 24 V supply. Calculate the total power.
+(5-2)/0.015 | | An LED requires 15 mA and has a forward voltage of 2 V. Calculate the series resistor needed with a 5 V supply.

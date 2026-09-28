@@ -291,6 +291,7 @@ export const mechanicsFormulas: FormulaDef[] = [
     hsc: ['Speed of a vehicle at the bottom of a slope with no friction'],
     example: { h: 20 },
     priority: 1,
+    requiresText: /fall|drop|released|slides? down|rolls? down|free[- ]fall|roller coaster|swing|dive|descend|down (a|the) (slope|hill|ramp)/,
   },
   {
     id: 'power',
@@ -355,6 +356,7 @@ export const mechanicsFormulas: FormulaDef[] = [
     hsc: ['Power to drive a car at constant speed against resistance', 'Thrust power of an aircraft'],
     example: { F: 800, v: 25 },
     priority: 4,
+    unlessKnown: ['u', 'a'], // accelerating: use ΔKE / t for average power, not F × v
   },
   {
     id: 'rotPower',
@@ -691,5 +693,32 @@ export const mechanicsFormulas: FormulaDef[] = [
     example: { m: 1000, v: 15, r: 50 },
     extension: true,
     priority: 0,
+  },
+
+  {
+    id: 'deltaKE',
+    name: 'Change in kinetic energy',
+    modules: ['transport', 'aero', 'civil'],
+    topic: 'Work, energy & power',
+    equation: '\\Delta KE = \\tfrac{1}{2}m(u^2 - v^2)',
+    vars: [
+      v('dKE', '\\Delta KE', 'Kinetic energy lost (positive when slowing down)', 'energy', { concept: 'dKE' }),
+      v('m', 'm', 'Mass', 'mass', { positive: true }),
+      v('u', 'u', 'Initial speed', 'velocity', { nonNegative: true }),
+      v('v', 'v', 'Final speed', 'velocity', { nonNegative: true }),
+    ],
+    solve: {
+      dKE: { expr: '\\tfrac{1}{2} #m (#u^2 - #v^2)', fn: ({ m, u, v }) => 0.5 * m * (u * u - v * v) },
+      m: { expr: '\\frac{2 #dKE}{#u^2 - #v^2}', fn: ({ dKE, u, v }) => (2 * dKE) / (u * u - v * v) },
+      u: { expr: '\\sqrt{#v^2 + \\frac{2 #dKE}{#m}}', fn: ({ dKE, m, v }) => Math.sqrt(v * v + (2 * dKE) / m) },
+      v: { expr: '\\sqrt{#u^2 - \\frac{2 #dKE}{#m}}', fn: ({ dKE, m, u }) => Math.sqrt(u * u - (2 * dKE) / m) },
+    },
+    aliases: ['loss of kinetic energy', 'energy dissipated by brakes', 'change in KE', 'regenerative braking energy'],
+    when: 'Energy removed by brakes (or recovered by regenerative braking) when a vehicle slows from u to v.',
+    sheet: 'derived',
+    source: 'Engineering mechanics — work, energy, power',
+    hsc: ['Heat generated in the brakes as a car slows', 'Energy recovered by regenerative braking'],
+    example: { m: 1000, u: 20, v: 10 },
+    priority: 3,
   },
 ];

@@ -81,6 +81,8 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
     const c = getConcept(q.concept);
     if (!c) continue;
     if (seen.has(q.concept)) {
+      const prev = knowns.find((k) => k.concept === q.concept);
+      if (prev && Math.abs(prev.valueSI - q.valueSI) <= 1e-9 * Math.max(1, Math.abs(q.valueSI))) continue; // same value mentioned twice
       sol.issues.push({ level: 'warning', message: `Two values were assigned to ${c.name}; only the first (${knowns.find((k) => k.concept === q.concept)?.valueSI}) is used. Reassign one of them.` });
       continue;
     }
@@ -96,6 +98,11 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
     }
     let valueSI = q.valueSI;
     if (kind.angle && !q.unit) valueSI = (q.value * Math.PI) / 180; // bare angle numbers are degrees
+    // "decelerates at 6 m/s²" / "deceleration of 6 m/s²" → a = −6 m/s²
+    if (q.concept === 'a' && valueSI > 0 && /(decelerat|retard|slows?(?: down)?(?: uniformly)? at|braking at)[^.;]{0,25}$/i.test(interp.normalised.slice(Math.max(0, q.start - 40), q.start))) {
+      valueSI = -valueSI;
+      sol.issues.push({ level: 'warning', message: `Deceleration taken as a negative acceleration: a = −${q.numText} ${q.unit}.` });
+    }
     knowns.push({ concept: q.concept, valueSI, source: 'given' });
     const unitText = q.unit === '°' ? '°' : q.unit ? ` ${q.unit}` : '';
     sol.given.push({ symbolLatex: c.latex, name: c.name, raw: `${q.numText}${unitText}`, valueSI, quantity: c.quantity, unit: q.unit, sf: q.sf });
@@ -148,6 +155,7 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
     }
   }
   if (interp.flags.doubleShear) add('shearPlanes', 2, 'double shear');
+  if (interp.flags.ideal) add('eta', 1, 'no friction ⇒ η = 100%');
   if (interp.flags.singleShear) add('shearPlanes', 1, 'single shear');
 
   if (!interp.targets.length) {
@@ -191,7 +199,7 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
       sol.finals.push({ symbolLatex: c.latex, name: `${c.name} (given)`, valueSI: k.valueSI, quantity: c.quantity });
       continue;
     }
-    let res = solveChain(knowns, [t], { modules: interp.modules, exclude });
+    let res = solveChain(knowns, [t], { modules: interp.modules, exclude, text: interp.normalised });
     if (res.missing.length) {
       // standard assumptions students are expected to make
       const assumptions: [string, number, string, RegExp][] = [
@@ -201,7 +209,7 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
       ];
       for (const [c, val, why, re] of assumptions) {
         if (seen.has(c) || !re.test(lowerText)) continue;
-        const trial = solveChain([...knowns, { concept: c, valueSI: val, source: 'given' }], [t], { modules: interp.modules, exclude });
+        const trial = solveChain([...knowns, { concept: c, valueSI: val, source: 'given' }], [t], { modules: interp.modules, exclude, text: interp.normalised });
         if (!trial.missing.length) {
           add(c, val, why);
           sol.issues.push({ level: 'warning', message: `Assumption: ${why}.` });

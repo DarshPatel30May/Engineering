@@ -1,0 +1,50 @@
+# Fasteners / joints
+10000/(Math.PI*0.008**2) | | A section of a building support structure is shown. The section consists of a vertical 12 mm thick steel member connected to a 12 mm thick horizontal member with three M16 bolts. A vertical tensile load of 30 kN acts on the bolts. Assuming the load is evenly distributed across the three bolts, calculate the shear stress on each bolt.
+12000/(4*Math.PI*0.005**2) | | A lap joint is made with four rivets of 10 mm diameter. The joint carries a load of 12 kN. Calculate the shear stress in each rivet.
+20000/(2*Math.PI*0.01**2) | | A clevis pin 20 mm in diameter connects a tie bar to a bracket. The tie carries a tensile force of 20 kN. Calculate the shear stress in the pin.
+50000/(2*2*Math.PI*0.006**2) | | Two 12 mm diameter bolts in double shear carry a load of 50 kN. Determine the shear stress in each bolt.
+18000/(Math.PI*0.006**2) | | A bracket is held by a single M12 bolt carrying a shear load of 18 kN. Calculate the shear stress in the bolt.
+Math.sqrt(4*(24000/3/100e6)/Math.PI) | | A bracket carrying 24 kN is attached with three bolts. If the allowable shear stress of the bolts is 100 MPa, calculate the minimum bolt diameter.
+10000/(0.016*0.012) | | Three M16 bolts connect two 12 mm thick plates and carry a total load of 30 kN. Calculate the bearing stress between each bolt and the plate.
+# Number words
+5000/(0.8*4) | | A load of 5 kN is raised by a pulley system with four supporting ropes. The efficiency is 80%. Calculate the effort.
+1/(1/10+1/10+1/10) | R_T | Three 10 Ω resistors are connected in parallel. Calculate the total resistance.
+24/(1/(1/12+1/12+1/12+1/12)) | I | Four 12 Ω resistors are connected in parallel across a 24 V supply. Calculate the current drawn.
+# Civil
+100000/(0.2*0.2) | | A square timber post 200 mm × 200 mm supports a compressive load of 100 kN. Calculate the stress in the post.
+0.0015/2 | | A 2 m long tie extends by 1.5 mm. Determine the strain.
+(20000*3)/(314.16e-6*200e9) | | A steel rod 3 m long with a cross-sectional area of 314.16 mm² carries a tensile load of 20 kN. If E = 200 GPa, calculate the extension.
+550e6/5 | | The ultimate tensile strength of a steel is 550 MPa. Using a factor of safety of 5, calculate the working stress.
+(12000*0.1)/(50e6*1e-12) | \sigma_{max} | A cantilever 3 m long carries a point load of 4 kN at its free end. The beam has a second moment of area of 50 × 10^6 mm^4 and the distance from the neutral axis to the extreme fibre is 100 mm. Calculate the maximum bending stress.
+9000 | R_B | A simply supported beam of span 8 m carries point loads of 6 kN at 2 m and 12 kN at 5 m from the left support. Calculate the reaction at the right support.
+1025*9.81*40 | | Calculate the pressure on a submarine hull at a depth of 40 m in seawater.
+(90*1000)/(Math.PI*0.15**2/4) | | A circular column of diameter 150 mm carries an axial load of 90 kN. Calculate the compressive stress.
+# Transport
+0.5*1500*25**2 | | A car of mass 1.5 t travels at 90 km/h. Calculate its kinetic energy.
+0.35*1200*9.81 | | The coefficient of friction between the tyres and the road is 0.35. Calculate the maximum braking force for a 1200 kg car on a level road.
+(0-15)/6 | | A bus slows from 54 km/h to rest in 6 s. Calculate its acceleration.
+(20**2)/(2*6) | | A car travelling at 20 m/s decelerates at 6 m/s². Calculate the stopping distance.
+40*25 | | A cyclist exerts a driving force of 40 N while travelling at a constant 25 m/s. Calculate the power output.
+(2*Math.PI*6000/60)*180 | | An engine develops a torque of 180 N·m at 6000 rpm. Calculate the power.
+2000*(0.3*0.3)/(0.02**2) | | A hydraulic jack has a pump piston of 20 mm diameter and a ram of 300 mm diameter. A force of 2 kN is applied to the pump piston. Calculate the force exerted by the ram.
+0.8*3*300 | | A pulley system with a velocity ratio of 3 is 80% efficient. Calculate the load that can be lifted with an effort of 300 N.
+Math.atan(0.25) | | A crate on a ramp is on the point of sliding when the coefficient of friction is 0.25. Calculate the angle of the ramp.
+12*150/1000*3.6e6 | | An electric scooter motor draws 12 A at 150 V. Calculate the energy used in one hour.
+48*20*3600 | | A 48 V e-bike battery has a capacity of 20 Ah. Calculate the energy stored.
+# Aero
+6000*9.81/12 | | A light aircraft of mass 6 t cruises in level flight with a lift to drag ratio of 12. Calculate the drag.
+2000*14 | | A glider loses 2 km of height with a glide ratio of 14. How far does it travel horizontally?
+0.5*1.225*(250**2-230**2)*25 | | The airflow over the top of a wing is 250 m/s and under the wing is 230 m/s. The wing area is 25 m² and air density is 1.225 kg/m³. Calculate the lift.
+0.5*1.225*70**2 | | Calculate the dynamic pressure at an airspeed of 70 m/s at sea level.
+(60/3.6)**2/(2*2.5) | | An aircraft accelerates from rest at 2.5 m/s² to a take-off speed of 60 km/h. Calculate the runway length.
+1/Math.cos(Math.PI/4) | | Calculate the load factor for an aircraft in a level turn with a bank angle of 45°.
+# Telecom
+3e8/2.4e9 | | Calculate the wavelength of a 2.4 GHz WiFi signal.
+3e8/(2*98.5e6) | | Calculate the length of a half-wave dipole antenna for an FM station broadcasting at 98.5 MHz.
+Math.asin(1.46/1.49)| | An optical fibre has a core refractive index of 1.49 and a cladding refractive index of 1.46. Determine the critical angle.
+10*Math.log10(1e-3/1) | | A signal of 1 W is attenuated to 1 mW. Calculate the loss in decibels.
+0.25*80 | | Calculate the total attenuation of an 80 km fibre with a loss of 0.25 dB/km.
+9/(1200+1800) | I | A 1.2 kΩ resistor and a 1.8 kΩ resistor are connected in series to a 9 V battery. Calculate the current.
+(12**2)/48 | | Calculate the power dissipated when 12 V is applied across a 48 Ω resistor.
+100e6*8/(20e6) | | Calculate the time to transmit a 100 MB file at 20 Mbps.
+2*20000 | | What is the minimum sampling rate for an audio signal with a maximum frequency of 20 kHz?
