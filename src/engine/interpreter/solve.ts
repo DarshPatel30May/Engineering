@@ -81,6 +81,7 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
     const c = getConcept(q.concept);
     if (!c) continue;
     if (seen.has(q.concept)) {
+      if (q.concept === 'plateT') continue; // plate thicknesses are context only
       sol.issues.push({ level: 'warning', message: `Two values were assigned to ${c.name}; only the first (${knowns.find((k) => k.concept === q.concept)?.valueSI}) is used. Reassign one of them.` });
       continue;
     }
@@ -149,6 +150,22 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
   }
   if (interp.flags.doubleShear) add('shearPlanes', 2, 'double shear');
   if (interp.flags.singleShear) add('shearPlanes', 1, 'single shear');
+  // bolts / rivets / pins: number sharing the load and metric designation (M16 → d = 16 mm)
+  const fx = interp.fasteners;
+  if (fx) {
+    if (fx.count !== undefined && !seen.has('nFasteners')) add('nFasteners', fx.count, `${fx.count} ${fx.kind}${fx.count > 1 ? 's' : ''} share the load`);
+    if (fx.dia !== undefined && !seen.has('dia') && !seen.has('A')) {
+      seen.add('dia');
+      knowns.push({ concept: 'dia', valueSI: fx.dia, source: 'given' });
+      sol.given.push({ symbolLatex: 'd', name: `Bolt diameter (${fx.diaText} = ${Math.round(fx.dia * 1000)} mm nominal diameter)`, raw: `${Math.round(fx.dia * 1000)} mm`, valueSI: fx.dia, quantity: 'length', unit: 'mm' });
+      sol.conversions.push(`d = ${Math.round(fx.dia * 1000)}\\ \\text{mm} = ${fmtLatex(fx.dia, 12)}\\ \\text{m}`);
+    }
+    if (interp.targets.some((t) => ['tau', 'nFasteners', 'dia', 'F'].includes(t)) && !interp.flags.doubleShear && !interp.flags.singleShear) {
+      const dbl = /clevis|fork|yoke|sandwich|between two (?:plates|members|straps)|two cover plates|butt joint with (?:two|double) cover/.test(lowerText);
+      add('shearPlanes', dbl ? 2 : 1, dbl ? 'double shear — member held between two plates' : 'single shear — two members overlap, so each fastener is cut on one plane');
+      sol.explanation.push(dbl ? 'Double shear: each fastener is sheared on two planes.' : 'Single shear: the two members overlap (lap joint), so each fastener is sheared on one plane.');
+    }
+  }
 
   if (!interp.targets.length) {
     sol.issues.push({ level: 'error', message: 'No unknown identified. Choose what to find from the “Find” list.' });
@@ -224,7 +241,13 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
     });
     sol.issues.push(...issues);
     const c = getConcept(t)!;
-    sol.finals.push({ symbolLatex: c.latex, name: c.name, valueSI: res.known.get(t)!.valueSI, quantity: c.quantity });
+    const val = res.known.get(t)!.valueSI;
+    if (t === 'nFasteners' && Math.abs(val - Math.round(val)) > 1e-9) {
+      // a fraction of a bolt is impossible: round UP so the stress does not exceed the allowable value
+      const whole = Math.ceil(val - 1e-9);
+      sol.finals.push({ symbolLatex: c.latex, name: `${c.name} (calculated ${fmt(val, 4)} → round UP)`, valueSI: whole, quantity: c.quantity });
+      sol.explanation.push(`${fmt(val, 4)} bolts would be exactly at the allowable stress; a whole number is needed and rounding down would overstress them, so ${whole} are required.`);
+    } else sol.finals.push({ symbolLatex: c.latex, name: c.name, valueSI: val, quantity: c.quantity });
     // add derived knowns so later targets reuse them (and number steps continuously)
     res.steps.forEach((s) => {
       if (!knownSet.has(s.concept)) {

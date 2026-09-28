@@ -40,6 +40,33 @@ export interface Interpretation {
   notes: string[];
   ambiguities: string[];
   special?: SpecialResult;
+  /** bolts / rivets / pins read from the wording ("three M16 bolts") */
+  fasteners?: { count?: number; countText?: string; dia?: number; diaText?: string; kind: string };
+}
+
+const NUMBER_WORDS: Record<string, number> = { a: 1, an: 1, one: 1, single: 1, two: 2, pair: 2, twin: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12 };
+const FASTENER = '(bolts?|rivets?|pins?|screws?|fasteners?|dowels?|studs?)';
+
+/** "three M16 bolts", "4 × M20 bolts", "a pair of 10 mm rivets", "two bolts of M12". */
+export function detectFasteners(lower: string): Interpretation['fasteners'] {
+  if (!new RegExp(FASTENER).test(lower)) return undefined;
+  const out: NonNullable<Interpretation['fasteners']> = { kind: 'bolt' };
+  const cm = new RegExp(`\\b(\\d+|a pair of|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|single|twin)\\s*(?:[x×]\\s*)?(?:(?:identical|equal|similar|high[- ]strength|steel|structural|m\\d{1,2}(?:\\s*[x×]\\s*[\\d.]+)?|\\d+(?:\\.\\d+)?\\s*mm(?: diameter)?|diameter)\\s+){0,4}${FASTENER}\\b`).exec(lower);
+  if (cm) {
+    const w = cm[1];
+    const n = /^\\d+$/.test(w) ? parseInt(w, 10) : w === 'a pair of' ? 2 : NUMBER_WORDS[w];
+    if (n && n >= 1 && n <= 100) {
+      out.count = n;
+      out.countText = cm[0];
+      out.kind = cm[2].replace(/s$/, '');
+    }
+  }
+  const mm = /\bm(\d{1,2})(?:\s*[x×]\s*[\d.]+)?\b/.exec(lower);
+  if (mm && new RegExp(`\\bm${mm[1]}\\b[^.]{0,40}${FASTENER}|${FASTENER}[^.]{0,20}\\bm${mm[1]}\\b`).test(lower)) {
+    out.dia = parseInt(mm[1], 10) / 1000;
+    out.diaText = `M${mm[1]}`;
+  }
+  return out.count || out.dia ? out : undefined;
 }
 
 const MODULE_WORDS: Record<ModuleId, string[]> = {
@@ -118,6 +145,8 @@ function occurrences(textLower: string, kw: string): number[] {
 
 /** Concepts that only make sense when certain wording is present. */
 const CONTEXT_REQUIRED: Record<string, RegExp> = {
+  plateT: /bolt|rivet|pin|fastener|lap joint|joint|connected|bracket|gusset|splice/,
+  nFasteners: /bolt|rivet|pin|fastener/,
   load: /effort|pulley|lever|machine|jack|winch|mechanical advantage|velocity ratio|block and tackle|hoist|wheel and axle|screw/,
   effort: /effort|pulley|lever|machine|jack|winch|mechanical advantage|velocity ratio|block and tackle|hoist|wheel and axle|screw/,
   distL: /effort|pulley|lever|machine|jack|winch|mechanical advantage|velocity ratio|block and tackle|hoist|wheel and axle|screw/,
@@ -284,8 +313,8 @@ function detectFlags(lower: string): Record<string, boolean> {
   return {
     fromRest: /from rest|starts? from rest|initially at rest|from a standstill|stationary start/.test(lower),
     toRest: /to rest|(comes?|brought|bring|brings) to (a )?(stop|rest|halt)|stops|to a stop|to a standstill|halts|to stop|stopping|to come to rest|pulls up/.test(lower),
-    doubleShear: /double shear/.test(lower),
-    singleShear: /single shear/.test(lower),
+    doubleShear: /double shear|clevis|fork(?:ed)? (?:end|joint)|yoke|two shear planes|butt joint with (?:two|double) cover|between two (?:plates|straps|lugs)/.test(lower),
+    singleShear: /single shear|one shear plane/.test(lower),
     level: /straight and level|level flight|cruis/.test(lower),
     constantSpeed: /(constant|steady|uniform) (speed|velocity)|without accelerating|at a constant rate/.test(lower),
     slideOnset: /(about|starts?|begins?|just) to slide|on the point of sliding|angle of repose|impending/.test(lower),
@@ -307,6 +336,23 @@ export function interpret(text: string): Interpretation {
   // the unknown(s) named in the question must not be used to label given data
   const prelimTargets = findTargets(normalised, new Set(), modules);
   const quantities = assignConcepts(raw, normalised, prelimTargets);
+  const fasteners = detectFasteners(lower);
+  if (fasteners?.count !== undefined) {
+    // a digit count ("3 bolts") is the number of fasteners, not a free number
+    for (const q of quantities) {
+      if (!q.unit && q.value === fasteners.count && fasteners.countText?.startsWith(q.numText)) {
+        q.concept = 'nFasteners';
+        q.confidence = 'high';
+      }
+    }
+  }
+  // thicknesses that are irrelevant to a fastener shear calculation are not "unknown data"
+  for (const q of quantities) {
+    if (q.concept === null && q.dim && q.dim[0] === 1 && q.dim[1] === 0 && /thick/.test(lower.slice(q.end, q.end + 12)) && fasteners) {
+      q.concept = 'plateT';
+      q.confidence = 'medium';
+    }
+  }
 
   // angle of repose: an angle at which sliding starts is φ, not a general incline
   if (flags.slideOnset) {
@@ -341,7 +387,10 @@ export function interpret(text: string): Interpretation {
     notes,
     ambiguities,
     special,
+    fasteners,
   };
+  if (fasteners?.diaText) notes.push(`${fasteners.diaText} is an ISO metric bolt: nominal (shank) diameter d = ${Math.round(fasteners.dia! * 1000)} mm.`);
+  if (fasteners?.count && fasteners.count > 1) notes.push(`The load is shared equally by the ${fasteners.count} ${fasteners.kind}s (N = ${fasteners.count}).`);
   if (special?.notes) notes.push(...special.notes);
   return interp;
 }

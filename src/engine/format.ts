@@ -202,5 +202,7 @@ export function displayValue(valueSI: number, kindId: string, sf = 3, unit?: str
   const u = unit ?? bestUnit(valueSI, k);
   const f = u === '' || u === 'dB' ? 1 : parseUnit(u).factor;
   const v = valueSI / f;
+  // whole-number counts (bolts, turns, teeth) are exact: show them without decimals
+  if (k.id === 'count' && Number.isInteger(v)) return { value: v, unit: u, text: String(v), latex: String(v) };
   return { value: v, unit: u, text: `${fmt(v, sf)}${u ? (u === '°' ? '°' : ' ' + u) : ''}`, latex: qtyLatex(v, u, sf) };
 }

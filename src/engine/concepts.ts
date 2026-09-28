@@ -61,6 +61,8 @@ export const CONCEPTS: Concept[] = [
   c('A', 'Area', 'A', 'area', ['area', 'cross-sectional area', 'cross sectional area', 'csa', 'contact area', 'surface area'], ['A', 'CSA']),
   c('tau', 'Shear stress', '\\tau', 'stress', ['shear stress', 'shearing stress'], ['τ', 'tau']),
   c('shearPlanes', 'Number of shear planes', 'n', 'count', ['shear planes']),
+  c('nFasteners', 'Number of bolts / rivets / pins', 'N', 'count', ['number of bolts', 'number of rivets', 'number of pins', 'bolts', 'rivets', 'fasteners', 'how many bolts', 'how many rivets']),
+  c('plateT', 'Plate / member thickness', 't', 'length', ['thick', 'thickness', 'plate thickness', 'mm thick', 'thick plate', 'thick steel', 'thick member']),
   c('pctEl', 'Percentage elongation', '\\%El', 'percent', ['percentage elongation', 'percent elongation', '% elongation', 'ductility']),
   c('pctRA', 'Reduction in area', '\\%RA', 'percent', ['reduction in area', 'reduction of area', 'percentage reduction']),
   c('A0', 'Original area', 'A_0', 'area', ['original area', 'original cross-sectional area', 'initial area']),

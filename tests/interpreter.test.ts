@@ -154,3 +154,31 @@ describe('Smart Solver — HSC-style questions', () => {
     expect(s.issues.some((x) => /Inconsistent/.test(x.message))).toBe(true);
   });
 });
+
+describe('bolts, rivets and pins (fasteners)', () => {
+  const A = (d: number) => (Math.PI * d * d) / 4;
+  it('three M16 bolts sharing 30 kN (building support section)', () => {
+    near(final('A section of a building support structure is shown. The section consists of a vertical 12 mm thick steel member connected to a 12 mm thick horizontal member with three M16 bolts. A vertical tensile load of 30 kN acts on the bolts. Assuming the load is evenly distributed across the three bolts, calculate the shear stress on each bolt.'), 30000 / (3 * A(0.016)));
+  });
+  it('four rivets in double shear', () => {
+    near(final('Four 20 mm diameter rivets in double shear carry a load of 60 kN. Calculate the shear stress in each rivet.'), 60000 / (4 * 2 * A(0.02)));
+  });
+  it('pin in a clevis is in double shear', () => {
+    near(final('A pin of diameter 12 mm in a clevis carries a load of 10 kN. Calculate the shear stress in the pin.'), 10000 / (2 * A(0.012)));
+  });
+  it('two M12 bolts in a lap joint', () => {
+    near(final('Two M12 bolts join two overlapping plates carrying a load of 20 kN. Calculate the shear stress in the bolts.'), 20000 / (2 * A(0.012)));
+  });
+  it('number of bolts is rounded up', () => {
+    expect(final('How many M10 bolts are needed to carry a shear load of 50 kN if the allowable shear stress is 100 MPa?')).toBe(7);
+  });
+  it('digit count and diameter in words', () => {
+    near(final('3 bolts of 16 mm diameter share a load of 30 kN equally. Calculate the shear stress in each bolt.'), 30000 / (3 * A(0.016)));
+  });
+  it('six M20 bolts on a bracket', () => {
+    near(final('A bracket is fixed to a wall with 6 M20 bolts. The bracket carries a load of 90 kN. Calculate the shear stress in each bolt.'), 90000 / (6 * A(0.02)));
+  });
+  it('minimum pin diameter in double shear', () => {
+    near(final('Calculate the minimum diameter of a pin in double shear carrying 40 kN if the allowable shear stress is 80 MPa.'), Math.sqrt((4 * (40000 / (2 * 80e6))) / Math.PI));
+  });
+});
