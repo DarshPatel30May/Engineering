@@ -81,6 +81,10 @@ export interface FormulaDef {
   identity?: boolean;
   /** chain solver: skip this formula if any of these concepts are known */
   unlessKnown?: string[];
+  /** chain solver: only use when at least one of these concepts is given */
+  requiresAnyGiven?: string[];
+  /** identity only: do not apply to a GIVEN source value when any of these concepts are also given */
+  notFromGivenIf?: string[];
   /** chain solver: only use when the question wording matches (physical situation-specific relations) */
   requiresText?: RegExp;
 }

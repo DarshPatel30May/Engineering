@@ -227,6 +227,13 @@ function symbolTarget(norm: string, clauseStart: number, assigned: Set<string>, 
 
 /** Phrase patterns that name an unknown unambiguously (checked before keyword scoring). */
 const TARGET_PATTERNS: [RegExp, string][] = [
+  [/^\s*(?:the\s+)?(?:useful\s+|output\s+)?power (?:delivered|transmitted|available|supplied) (?:to|at) (?:the\s+)?(?:driving\s+|drive\s+)?(?:wheels?|axle|propeller|road|output)/, 'Pout'],
+  [/^\s*(?:the\s+)?(?:useful\s+)?power (?:at|to) the (?:driving\s+)?wheels/, 'Pout'],
+  [/^\s*(?:the\s+)?(?:tractive|driving) (?:force|effort)(?: at the (?:driving )?wheels)?/, 'Ft'],
+  [/^\s*(?:the\s+)?(?:total\s+)?torque (?:at|on) (?:the\s+)?(?:driving\s+)?wheels/, 'wheelTorque'],
+  [/^\s*(?:the\s+)?torque (?:at|on) each (?:driving\s+)?wheel/, 'wheelTorqueEach'],
+  [/^\s*(?:the\s+)?(?:input|engine|electrical input) power/, 'Pin'],
+  [/^\s*(?:the\s+)?(?:mechanical\s+|useful\s+)?(?:power output|output power)/, 'Pout'],
   [/^\s*(?:the\s+)?(?:minimum\s+|required\s+)?length of (?:a|an|the)?[^,.;]{0,30}?(?:antenna|dipole|aerial|monopole)/, 'antennaLength'],
   [/^\s*(?:the\s+)?(?:shear stress|stress) (?:on|in) each (?:bolt|rivet|pin|screw)/, 'tau'],
   [/^\s*(?:the\s+)?(?:load|force) (?:on|in|carried by) each (?:bolt|rivet|pin|screw)/, 'Fbolt'],
@@ -358,6 +365,48 @@ function applyPairRules(qs: QtyAssignment[], text: string, lower: string) {
     a.concept = pair[0];
     b.concept = pair[1];
     a.confidence = b.confidence = 'high';
+  }
+  // Power/energy around an efficient component (transmission, gearbox, motor, pump, generator…):
+  // decide whether each stated power is upstream (input) or downstream (output) of it.
+  if (/efficien/.test(lower)) {
+    const sentenceOf = (q: QtyAssignment) => {
+      const a = text.lastIndexOf('.', q.start - 1) + 1;
+      const bIdx = text.indexOf('.', q.end);
+      return text.slice(a, bIdx < 0 ? undefined : bIdx).toLowerCase();
+    };
+    const OUT = /\bdelivers\b|\boutput of\b|(delivered|transmitted|supplied|passed) to (the )?(driving |drive |rear |front )?(wheels?|axle|propeller|load|output shaft|road)|at the (driving |drive )?wheels|wheel power|output (of|from) the (transmission|gearbox|drivetrain|motor|pump|machine|generator)|useful output|output power|power output|at the output|electrical output of the generator/;
+    const IN = /\bengine (produces|develops|delivers|generates|outputs|supplies|provides|is rated)|produced by the engine|engine power|power of the engine|\bmotor (draws|consumes|takes|uses)|\bdraws\b|\bconsumes\b|\binput\b|supplied to the (motor|machine|pump|transmission|gearbox)|electrical power (input|supplied|drawn)|from the (mains|supply|battery)|fuel (energy|power)/;
+    const component = /transmission|gearbox|drivetrain|driveline|drive train|final drive|chain drive|belt drive|differential/.test(lower);
+    const nearest = (re: RegExp, sen: string, at: number) => {
+      let best = Infinity;
+      const g = new RegExp(re.source, 'g');
+      let m: RegExpExecArray | null;
+      while ((m = g.exec(sen))) {
+        const d = m.index + m[0].length <= at ? at - (m.index + m[0].length) : (m.index - at) * 1.5; // prefer cues before the number
+        best = Math.min(best, d);
+      }
+      return best;
+    };
+    for (const q of qs) {
+      if (!q.dim || !['2,1,-3,0', '2,1,-2,0'].includes(q.dim.join(','))) continue;
+      const sStart = text.lastIndexOf('.', q.start - 1) + 1;
+      const sen = sentenceOf(q);
+      const at = q.start - sStart;
+      const isPower = q.dim.join(',') === '2,1,-3,0';
+      // strong rule: an engine's power feeding a transmission/gearbox is that component's INPUT, even if called "useful"
+      const engineFeeds = component && /\bengine\b/.test(sen) && !OUT.test(sen);
+      const generic = !q.concept || ['P', 'energy', 'work'].includes(q.concept);
+      if (!engineFeeds && !generic) continue;
+      let role: 'in' | 'out' | null = engineFeeds ? 'in' : null;
+      if (!role) {
+        const dIn = nearest(IN, sen, at);
+        const dOut = nearest(OUT, sen, at);
+        if (dIn === Infinity && dOut === Infinity) continue;
+        role = dIn < dOut ? 'in' : 'out';
+      }
+      q.concept = isPower ? (role === 'in' ? 'Pin' : 'Pout') : role === 'in' ? 'Ein' : 'Eout';
+      q.confidence = 'high';
+    }
   }
   // two refractive indices written as "(n = 1.5) … (n = 1.33)": first is medium 1, second is medium 2
   const ns = qs.filter((q) => !q.unit && (q.symbol === 'n' || q.concept === 'n1' || q.concept === 'n2') && q.value >= 1 && q.value < 4);

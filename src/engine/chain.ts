@@ -37,7 +37,7 @@ export interface ChainResult {
 }
 
 /** Bridging identities between concepts that are the same physical value in typical HSC questions. */
-function identity(a: string, b: string, q: QuantityId, why: string, unlessKnown?: string[], contextOnly?: ModuleId[]): FormulaDef {
+function identity(a: string, b: string, q: QuantityId, why: string, unlessKnown?: string[], contextOnly?: ModuleId[], notFromGivenIf?: string[]): FormulaDef {
   const ca = getConcept(a)!;
   const cb = getConcept(b)!;
   return {
@@ -58,6 +58,7 @@ function identity(a: string, b: string, q: QuantityId, why: string, unlessKnown?
     identity: true,
     unlessKnown,
     contextOnly,
+    notFromGivenIf,
   };
 }
 
@@ -73,11 +74,11 @@ export const IDENTITIES: FormulaDef[] = [
   identity('wingArea', 'A', 'area', 'The area given is the wing (planform) area.', undefined, ['aero']),
   identity('Fw', 'F', 'force', 'The working load is the applied force.'),
   identity('normal', 'Wt', 'force', 'On a horizontal surface the normal reaction equals the weight.', ['incline']),
-  identity('Pin', 'P', 'power', 'The electrical power drawn is the input power.', ['eta']),
-  identity('Pout', 'P', 'power', 'The useful mechanical power is the output power.', ['V', 'I', 'R', 'Pin']),
+  { ...identity('Pin', 'P', 'power', 'The electrical power drawn (P = VI) is the input power to the machine.', undefined, undefined, ['eta']), requiresAnyGiven: ['V', 'I'] },
+  identity('Pout', 'P', 'power', 'The mechanical power calculated is the useful output power.', ['V', 'I', 'R', 'Pin'], undefined, ['eta']),
   identity('work', 'energy', 'energy', 'Work done equals energy transferred.'),
-  identity('Ein', 'energy', 'energy', 'The energy supplied is the input energy.'),
-  identity('Eout', 'work', 'energy', 'The useful work done is the energy output.'),
+  identity('Ein', 'energy', 'energy', 'The energy supplied is the input energy.', undefined, undefined, ['eta']),
+  identity('Eout', 'work', 'energy', 'The useful work done is the energy output.', undefined, undefined, ['eta']),
   identity('depth', 'h', 'length', 'The depth of fluid equals the height given.'),
   identity('A0', 'A', 'area', 'The original area is the cross-sectional area.'),
   identity('Ft', 'F', 'force', 'The tractive force is the applied driving force.'),
@@ -143,6 +144,7 @@ export function solveChain(knownIn: Known[], targets: string[], opts: ChainOptio
     let changed = false;
     for (const f of formulas) {
       if (f.unlessKnown?.some((c) => given.has(c))) continue;
+      if (f.requiresAnyGiven && !f.requiresAnyGiven.some((c) => given.has(c))) continue;
       for (const target of f.vars) {
         if (!f.solve[target.key]) continue;
         if (given.has(target.concept)) continue;
@@ -154,6 +156,12 @@ export function solveChain(knownIn: Known[], targets: string[], opts: ChainOptio
           if (vd.key === target.key) continue;
           const val = valueOf(vd.concept);
           if (val !== undefined && vd.concept !== target.concept) {
+            // a stated (given) value cannot be relabelled by an identity when it is ambiguous, e.g. a given
+            // power with an efficiency present could be either the input or the output
+            if (f.identity && f.notFromGivenIf && given.has(vd.concept) && f.notFromGivenIf.some((c) => given.has(c))) {
+              ok = false;
+              break;
+            }
             // no identity-of-identity chains (e.g. weight → force → tractive force → thrust)
             if (f.identity && best.get(vd.concept)?.formula.identity) {
               ok = false;

@@ -1,0 +1,10 @@
+# Power through an efficient component (drivetrain / motor / pump) — input vs output
+32000*0.8 | | A small petrol vehicle is travelling at a constant speed of 72 km/h. At this speed, the engine produces 32 kW of useful mechanical power. The transmission between the engine and the driving wheels operates at an efficiency of 80%. The effective rolling radius of each driving wheel is 0.30 m. (a) Calculate the useful power delivered to the driving wheels. [1 mark]
+32000*0.8/20 | | A small petrol vehicle is travelling at a constant speed of 72 km/h. At this speed, the engine produces 32 kW of useful mechanical power. The transmission between the engine and the driving wheels operates at an efficiency of 80%. The effective rolling radius of each driving wheel is 0.30 m. (b) Calculate the tractive force at the driving wheels. [2 marks]
+32000*0.8/20*0.3 | | A small petrol vehicle is travelling at a constant speed of 72 km/h. At this speed, the engine produces 32 kW of useful mechanical power. The transmission between the engine and the driving wheels operates at an efficiency of 80%. The effective rolling radius of each driving wheel is 0.30 m. (c) Calculate the total torque at the driving wheels. [2 marks]
+32000*0.8/20*0.3/2 | | A car has two driving wheels of rolling radius 0.30 m. The engine produces 32 kW and the transmission is 80% efficient. The car travels at a constant 72 km/h. Calculate the torque at each driving wheel.
+60000/0.9 | | The power delivered to the wheels of a bus is 60 kW. If the transmission efficiency is 90%, calculate the engine power.
+45000*0.85 | | An engine develops 45 kW. The gearbox is 85% efficient. Calculate the power output of the gearbox.
+240*10*0.85 | | An electric motor draws 10 A from a 240 V supply and is 85% efficient. Calculate the mechanical output power.
+1500/0.75 | | A pump delivers 1.5 kW of useful hydraulic power and is 75% efficient. Calculate the input power.
+(800*9.81*30/25)/0.75 | | An 800 kg lift car is raised 30 m in 25 s. If the motor is 75% efficient, calculate the electrical power input.

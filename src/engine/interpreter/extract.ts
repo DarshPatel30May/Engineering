@@ -45,6 +45,7 @@ export function normaliseText(src: string): string {
   // metric fastener designations: "M16 bolts" → "bolts of 16 mm diameter"
   s = s.replace(/\bM(\d{1,2}(?:\.\d)?)\s+((?:high[- ]strength\s+|steel\s+|hex\s+)?(?:bolts?|screws?|studs?|fasteners?|rivets?|pins?))\b/g, '$2 of $1 mm diameter');
   s = s.replace(/\bM(\d{1,2}(?:\.\d)?)\b(?=[^.]{0,20}\b(?:bolt|screw|stud|thread|nut))/g, '$1 mm diameter');
+  s = s.replace(/[\[(]\s*\d+\s*marks?\s*[\])]/gi, ' ');
   s = s.replace(/per cent/gi, '%');
   // durations written in words
   s = s.replace(/\bhalf an hour\b/gi, '0.5 h').replace(/\b(?:one|an|a)\s+(hour|minute|second|day)\b(?!\s*(?:per|each))/gi, (_m, u: string) => `1 ${({ hour: 'h', minute: 'min', second: 's', day: 'h×24' } as Record<string, string>)[u.toLowerCase()]}`).replace(/1 h×24/g, '24 h');

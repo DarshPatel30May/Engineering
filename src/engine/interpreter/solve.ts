@@ -218,6 +218,13 @@ export function solveChainInterpretation(interp: Interpretation, sf = 4): Soluti
         }
       }
     }
+    // An "answer" reached only by relabelling a stated value (identity steps alone) is not a calculation and is
+    // almost always a misreading (e.g. calling the engine power the wheel power and ignoring the efficiency).
+    if (!res.missing.length && res.steps.length > 0 && res.steps.every((st) => st.formula.identity)) {
+      const c = getConcept(t)!;
+      sol.issues.push({ level: 'error', message: `Cannot determine ${c.name.toLowerCase()}: the only route found just relabels a given value (${res.steps.map((st) => st.formula.name).join('; ')}), which would skip a real calculation. Check the Interpretation panel — e.g. whether a stated power is the input or output of an efficient component.` });
+      continue;
+    }
     if (res.missing.length) {
       const c = getConcept(t)!;
       sol.issues.push({ level: 'error', message: `Missing data: cannot find ${c.name.toLowerCase()} from the information given. Options: ${missingHint(t, knownSet)}.` });
