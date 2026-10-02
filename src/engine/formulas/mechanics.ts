@@ -76,6 +76,7 @@ export const mechanicsFormulas: FormulaDef[] = [
     hsc: ['Support reactions of simply supported beams', 'Maximum bending moment at a cantilever root', 'Tailplane load about aircraft CG'],
     example: { F: 5000, d: 2 },
     priority: 5,
+    unlessKnown: ['nWings', 'nFasteners', 'nWheels'], // load shared between items: use the per-item force
   },
   {
     id: 'torque',

@@ -2,7 +2,7 @@
 
 _Generated from `src/engine/formulas` by `npm run coverage-matrix`. Do not edit by hand._
 
-Formulas: **146**, every variable solvable (467 rearrangements, all verified by automated round-trip and dimensional tests).
+Formulas: **149**, every variable solvable (477 rearrangements, all verified by automated round-trip and dimensional tests).
 
 Sheet column: **yes** = expected on the NESA Engineering Studies formulae sheet; **derived** = a rearrangement/combination of sheet formulae; **no** = must be known or derived by the student (HSC-relevant, or marked _extension_). Formula-sheet status is based on the author’s knowledge of the NESA sheet — verify against the current official sheet.
 
@@ -67,6 +67,7 @@ Multi-step tools: **Section properties (I, ȳ, Z) — composite sections**, **Ce
 | Calculation | Formula | Variables (SI) | Common HSC units | Rearranged forms | Sheet | Past-HSC style applications |
 |---|---|---|---|---|---|---|
 | Engineering stress (axial) | σ = (F)/(A) | σ Stress (tensile or compressive) [Pa]; F Axial force (tension or compression) [N]; A Cross-sectional area [m²] | Pa, kPa, MPa, GPa, N/mm², N, kN, MN, mm², cm², m² | σ = (F)/(A); F = σ × A; A = (F)/(σ) | yes | Stress in a truss member once its force is known; Minimum diameter of a tie rod for an allowable stress; Stress in a cable of a suspension bridge |
+| Stress when a load is shared by identical members | σ = (F)/(N A) | σ Stress in each member [Pa]; F Total load [N]; N Number of identical members sharing the load equally [–]; A Cross-sectional area of one member [m²] | Pa, kPa, MPa, GPa, N/mm², N, kN, MN, mm², cm², m² | σ = (F)/(N A); F = σ N A; N = (F)/(σ A); A = (F)/(N σ) | derived | Stress in each of four columns supporting a water tank |
 | Engineering strain | ε = (Δ L)/(L) | ε Strain [–]; Δ L Change in length (extension/compression) [m]; L Original length [m] | mm, cm, m, km | ε = (Δ L)/(L); Δ L = ε × L; L = (Δ L)/(ε) | yes | Strain in a tensile test specimen; Extension of a cable from strain |
 | Young's modulus (modulus of elasticity) | E = (σ)/(ε) | E Young's modulus [Pa]; σ Stress (within the elastic/proportional region) [Pa]; ε Strain [–] | Pa, kPa, MPa, GPa, N/mm² | E = (σ)/(ε); σ = E × ε; ε = (σ)/(E) | yes | E from the slope of a stress–strain graph; Extension of a steel member given E |
 | Young's modulus — combined form (extension) | E = (FL)/(AΔ L) | E Young's modulus [Pa]; F Axial force [N]; L Original length [m]; A Cross-sectional area [m²]; Δ L Change in length [m] | Pa, kPa, MPa, GPa, N/mm², N, kN, MN, mm, cm, m, km, mm², cm², m² | E = (F L)/(A Δ L); F = (E A Δ L)/(L); L = (E A Δ L)/(F); A = (F L)/(E Δ L); Δ L = (F L)/(A E) | derived | Elongation of a steel tie under load; Change in length of a bridge cable |
@@ -229,6 +230,7 @@ Multi-step tools: **Flight forces (level, climb, glide, turn)**
 | Calculation | Formula | Variables (SI) | Common HSC units | Rearranged forms | Sheet | Past-HSC style applications |
 |---|---|---|---|---|---|---|
 | Straight & level flight: lift = weight | L = W | L Lift [N]; W Weight [N] | N, kN, MN | L = W; W = L | derived | Lift required for an aircraft of given mass in cruise |
+| Lift carried by one wing | L_wing = (L)/(n) | L_wing Lift on one wing [N]; L Total lift [N]; n Number of wings sharing the lift equally [–] | N, kN, MN | L_wing = (L)/(n); L = L_wing × n; n = \fracLL_wing | derived | Lift on one wing of a light aircraft in level flight |
 | Straight & level flight: thrust = drag | T = D | T Thrust [N]; D Drag [N] | N, kN, MN | T = D; D = T | derived | Thrust required in cruise given the L/D ratio |
 | Lift-to-drag ratio | (L)/(D) = L/D ratio | L/D Lift-to-drag ratio [–]; L Lift [N]; D Drag [N] | N, kN, MN | L/D = (L)/(D); L = L/D × D; D = (L)/(L/D) | derived | Drag (and thrust required) in cruise from L/D; Comparing glider performance |
 | Climbing flight: lift | L = Wcosγ | L Lift [N]; W Weight [N]; γ Climb angle [rad] | N, kN, MN, °, rad | L = W cos(γ); W = (L)/(cos(γ)); γ = cos^-1((L)/(W)) | derived | Lift during a steady climb |
@@ -282,6 +284,7 @@ Multi-step tools: **Beam analyser (reactions, SFD, BMD, bending stress)**, **Cen
 
 | Calculation | Formula | Variables (SI) | Common HSC units | Rearranged forms | Sheet | Past-HSC style applications |
 |---|---|---|---|---|---|---|
+| Bending moment at the wing root | M_root = L_wing × d | M_root Bending moment at the wing root [N·m]; L_wing Resultant lift on one wing [N]; d Distance of the resultant lift from the wing root [m] | N·mm, N·m, kN·m, N, kN, MN, mm, cm, m, km | M_root = L_wing × d; L_wing = \fracM_rootd; d = \fracM_rootL_wing | derived | Bending moment and bending stress in a main wing spar |
 | Bending stress | σ = (My)/(I) | σ Bending stress (at distance y from the neutral axis) [Pa]; M Bending moment [N·m]; y Distance from the neutral axis [m]; I Second moment of area about the neutral axis [m⁴] | Pa, kPa, MPa, GPa, N/mm², N·mm, N·m, kN·m, mm, cm, m, km, mm⁴, cm⁴, m⁴ | σ = (M y)/(I); M = (σ I)/(y); y = (σ I)/(M); I = (M y)/(σ) | yes | Maximum bending stress in a simply supported beam with point loads; Bending stress in an aircraft wing spar / cantilever |
 | Max bending moment — cantilever, UDL | M_max = (wL^2)/(2) | M_max Maximum bending moment (at the fixed end) [N·m]; w Uniformly distributed load [N/m]; L Cantilever length [m] | N·mm, N·m, kN·m, N/m, kN/m, mm, cm, m, km | M_max = (w L^2)/(2); w = \frac2 M_maxL^2; L = \sqrt\frac2 M_maxw | derived | Root bending moment of a wing idealised as a UDL cantilever |
 | Max bending moment — cantilever, end point load | M_max = FL | M_max Maximum bending moment (at the fixed end) [N·m]; F End point load [N]; L Cantilever length [m] | N·mm, N·m, kN·m, N, kN, MN, mm, cm, m, km | M_max = F × L; F = \fracM_maxL; L = \fracM_maxF | derived | Bending stress at the root of a cantilever |

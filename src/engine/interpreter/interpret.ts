@@ -227,6 +227,8 @@ function symbolTarget(norm: string, clauseStart: number, assigned: Set<string>, 
 
 /** Phrase patterns that name an unknown unambiguously (checked before keyword scoring). */
 const TARGET_PATTERNS: [RegExp, string][] = [
+  [/^\s*(?:the\s+)?lift(?:\s+force)?\s+(?:provided|produced|generated|carried|supported)?\s*(?:by|on|for|of)\s+(?:one|each|a single)\s+wing/, 'liftWing'],
+  [/^\s*(?:the\s+)?(?:maximum\s+)?bending moment (?:at|about) the (?:wing\s+)?root/, 'M'],
   [/^\s*(?:the\s+)?(?:useful\s+|output\s+)?power (?:delivered|transmitted|available|supplied) (?:to|at) (?:the\s+)?(?:driving\s+|drive\s+)?(?:wheels?|axle|propeller|road|output)/, 'Pout'],
   [/^\s*(?:the\s+)?(?:useful\s+)?power (?:at|to) the (?:driving\s+)?wheels/, 'Pout'],
   [/^\s*(?:the\s+)?(?:tractive|driving) (?:force|effort)(?: at the (?:driving )?wheels)?/, 'Ft'],

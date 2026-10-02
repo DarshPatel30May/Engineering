@@ -37,7 +37,7 @@ export const MODULE_CATALOG: Record<ModuleId, Category[]> = {
     { title: 'Beams & bending', items: [...T('beam'), ...F('bending', 'ssCentral', 'ssUdl', 'cantPoint', 'cantUdl', 'udlTotal', 'sectionModulus', 'bendingZ')] },
     { title: 'Trusses & joints', items: [...T('truss'), ...F('stress', 'shear', 'fastenerLoad', 'shearPerBolt', 'bearingStress')] },
     { title: 'Section properties', items: [...T('section', 'centroid'), ...F('Irect', 'yRect', 'Icircle', 'Itube', 'areaCircle', 'areaTube', 'areaRect')] },
-    { title: 'Stress & strain', items: F('stress', 'strain', 'youngs', 'youngsCombined', 'hooke', 'shear') },
+    { title: 'Stress & strain', items: F('stress', 'stressShared', 'strain', 'youngs', 'youngsCombined', 'hooke', 'shear') },
     { title: 'Material testing & factor of safety', items: [...T('tensile'), ...F('fosUts', 'fosYield', 'fosLoad', 'pctElong', 'pctRA', 'brinell', 'vickers', 'impactEnergy', 'strainEnergy', 'resilience', 'density')] },
     { title: 'Pressure & hydraulics', items: F('pressure', 'hydrostatic', 'damForce', 'pascal') },
   ],
@@ -53,12 +53,12 @@ export const MODULE_CATALOG: Record<ModuleId, Category[]> = {
     { title: 'Engineering materials', items: [...T('lever', 'tensile'), ...F('stress', 'strain', 'youngs', 'fosUts', 'pctElong', 'brinell', 'vickers', 'impactEnergy')] },
   ],
   aero: [
-    { title: 'Flight forces', items: [...T('flight'), ...F('levelLift', 'levelThrust', 'liftDragRatio', 'climbLift', 'climbThrust', 'glideRatio', 'glideAngle')] },
+    { title: 'Flight forces', items: [...T('flight'), ...F('levelLift', 'liftPerWing', 'levelThrust', 'liftDragRatio', 'climbLift', 'climbThrust', 'glideRatio', 'glideAngle')] },
     { title: 'Lift & drag', items: F('bernoulliDp', 'liftFromDp', 'liftEquation', 'dragEquation') },
     { title: 'Fluid mechanics', items: F('bernoulli', 'dynamicPressure', 'continuity', 'pascal', 'hydrostatic', 'pressure') },
     { title: 'Aircraft performance', items: F('wingLoading', 'aspectRatio', 'loadFactor', 'bankedTurn', 'mach') },
     { title: 'Propulsion & power', items: F('jetThrust', 'tractive', 'powerFv', 'rotPower', 'suvat3') },
-    { title: 'Aircraft structures & materials', items: [...T('beam', 'centroid', 'tensile'), ...F('bending', 'cantUdl', 'cantPoint', 'moment', 'stress', 'strain', 'youngs', 'fosUts', 'shear', 'vickers', 'impactEnergy')] },
+    { title: 'Aircraft structures & materials', items: [...T('beam', 'centroid', 'tensile'), ...F('wingRootMoment', 'bending', 'cantUdl', 'cantPoint', 'moment', 'stress', 'strain', 'youngs', 'fosUts', 'shear', 'vickers', 'impactEnergy')] },
   ],
   telecom: [
     { title: 'Electrical circuits', items: [...T('circuit'), ...F('ohm', 'powerVI', 'powerI2R', 'powerV2R', 'series2', 'parallel2', 'ledResistor', 'energyTime', 'energyCost', 'charge', 'rms')] },

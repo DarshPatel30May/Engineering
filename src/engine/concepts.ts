@@ -32,7 +32,7 @@ export const CONCEPTS: Concept[] = [
   c('a', 'Acceleration', 'a', 'acceleration', ['acceleration', 'accelerates', 'deceleration', 'decelerates', 'retardation'], ['a']),
   c('g', 'Gravitational acceleration', 'g', 'acceleration', ['gravitational acceleration', 'acceleration due to gravity', 'gravity'], ['g']),
   c('M', 'Moment / bending moment', 'M', 'moment', ['bending moment', 'moment', 'maximum bending moment', 'turning moment'], ['M', 'BM']),
-  c('dist', 'Perpendicular distance', 'd', 'length', ['perpendicular distance', 'lever arm', 'moment arm', 'from the pivot', 'from the support', 'from the fulcrum', 'from the hinge', 'at a distance'], ['d']),
+  c('dist', 'Perpendicular distance', 'd', 'length', ['perpendicular distance', 'lever arm', 'moment arm', 'from the pivot', 'from the support', 'from the fulcrum', 'from the hinge', 'at a distance', 'from the wing root', 'from the root', 'act at a distance', 'acts at a distance', 'from the fuselage', 'from the centreline', 'from the center line', 'from the axis'], ['d']),
   c('torque', 'Torque', 'T', 'torque', ['torque', 'twisting moment'], ['T', 'τ']),
   c('radius', 'Radius', 'r', 'length', ['radius', 'radius of', 'wheel radius', 'crank', 'spanner length', 'curve of radius'], ['r']),
   // stress & strain
@@ -148,6 +148,9 @@ export const CONCEPTS: Concept[] = [
   c('Ip', 'Primary current', 'I_p', 'current', ['primary current']),
   c('Is', 'Secondary current', 'I_s', 'current', ['secondary current']),
   // aero
+  c('liftWing', 'Lift on one wing', 'L_{wing}', 'force', ['lift on one wing', 'lift per wing', 'lift force provided by one wing', 'lift produced by one wing', 'lift on each wing', 'lift force on each wing', 'lift force of one wing', 'each wing provides', 'one wing']),
+  c('nWings', 'Number of wings', 'n', 'count', ['wings', 'wing panels']),
+  c('nShare', 'Number of members sharing the load', 'N', 'count', ['columns', 'legs', 'supports', 'cables', 'wires', 'hangers', 'struts', 'posts', 'piles', 'ropes sharing', 'tie rods', 'rods']),
   c('Lift', 'Lift', 'L', 'force', ['lift', 'lift force', 'aerodynamic lift'], ['L']),
   c('Drag', 'Drag', 'D', 'force', ['drag', 'drag force', 'aerodynamic drag', 'air resistance'], ['D']),
   c('Th', 'Thrust', 'T', 'force', ['thrust', 'engine thrust', 'propulsive force'], ['T']),

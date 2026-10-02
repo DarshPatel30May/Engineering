@@ -30,6 +30,7 @@ export const civilFormulas: FormulaDef[] = [
     hsc: ['Stress in a truss member once its force is known', 'Minimum diameter of a tie rod for an allowable stress', 'Stress in a cable of a suspension bridge'],
     example: { F: 8000, A: 200e-6 },
     priority: 6,
+    unlessKnown: ['nShare'],
   },
   {
     id: 'strain',
@@ -936,5 +937,32 @@ export const civilFormulas: FormulaDef[] = [
     example: { Fb: 10000, d: 0.016, t: 0.012 },
     extension: true,
     priority: 3,
+  },
+
+  {
+    id: 'stressShared',
+    name: 'Stress when a load is shared by identical members',
+    modules: ['civil', 'transport', 'aero'],
+    topic: 'Stress & strain',
+    equation: '\\sigma = \\frac{F}{N A}',
+    vars: [
+      v('sigma', '\\sigma', 'Stress in each member', 'stress'),
+      v('F', 'F', 'Total load', 'force'),
+      v('N', 'N', 'Number of identical members sharing the load equally', 'count', { concept: 'nShare', positive: true, integer: true }),
+      v('A', 'A', 'Cross-sectional area of one member', 'area', { positive: true }),
+    ],
+    solve: {
+      sigma: { expr: '\\frac{#F}{#N #A}', fn: ({ F, N, A }) => F / (N * A) },
+      F: { expr: '#sigma #N #A', fn: ({ sigma, N, A }) => sigma * N * A },
+      N: { expr: '\\frac{#F}{#sigma #A}', fn: ({ F, sigma, A }) => F / (sigma * A) },
+      A: { expr: '\\frac{#F}{#N #sigma}', fn: ({ F, N, sigma }) => F / (N * sigma) },
+    },
+    aliases: ['shared equally', 'four columns', 'supported by cables', 'each leg'],
+    when: 'A load carried equally by N identical columns, legs, cables or rods: each carries F/N.',
+    sheet: 'derived',
+    source: 'Engineering mechanics — stress & strain',
+    hsc: ['Stress in each of four columns supporting a water tank'],
+    example: { F: 200000, N: 4, A: 0.01 },
+    priority: 6,
   },
 ];
