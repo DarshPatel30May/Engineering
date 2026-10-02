@@ -25,12 +25,47 @@ export interface RawQuantity {
 const SUPERSCRIPT: Record<string, string> = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', '⁻': '-' };
 
 /** Normalise unicode, scientific notation and thousands separators. */
+const LATEX_SYMBOLS: Record<string, string> = {
+  sigma: 'σ', varepsilon: 'ε', epsilon: 'ε', mu: 'μ', eta: 'η', rho: 'ρ', lambda: 'λ', theta: 'θ', phi: 'φ', varphi: 'φ',
+  gamma: 'γ', tau: 'τ', omega: 'ω', Omega: 'Ω', Delta: 'Δ', delta: 'δ', alpha: 'α', beta: 'β', pi: 'π', Sigma: 'Σ',
+  times: '×', cdot: '·', div: '÷', approx: '≈', degree: '°', circ: '°', ell: 'ℓ', parallel: '||', infty: '∞',
+};
+
+/**
+ * Convert LaTeX / Markdown maths (as pasted from ChatGPT, Word, textbooks) into plain text:
+ *   \[ I = 8.0\times10^{-6}\text{ m}^4 \]  →  I = 8.0×10^-6 m^4
+ *   \frac{My}{I} → (My)/(I),  \sigma → σ,  30^\circ → 30°,  \,\text{kN} → kN
+ */
+export function latexToText(src: string): string {
+  let s = src;
+  const mathDollar = /\$[^$\n]*[=^_\\][^$\n]*\$/;
+  if (!/\\[A-Za-z]|\\[\[\]()]/.test(s) && !mathDollar.test(s)) return s;
+  s = s.replace(/\\\[|\\\]|\\\(|\\\)/g, ' ');
+  // $…$ / $$…$$ only when they wrap maths (a lone "$5" is money)
+  s = s.replace(/\$\$([\s\S]*?)\$\$/g, ' $1 ').replace(/\$([^$\n]+?)\$/g, (m, inner: string) => (/[=^_\\]/.test(inner) ? ` ${inner} ` : m));
+  s = s.replace(/\\(?:begin|end)\{[^}]*\}/g, ' ');
+  s = s.replace(/\\left|\\right/g, '');
+  for (let i = 0; i < 6 && /\\[dt]?frac\s*\{/.test(s); i++) {
+    s = s.replace(/\\[dt]?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, '($1)/($2)');
+  }
+  s = s.replace(/\\sqrt\s*\{([^{}]*)\}/g, 'sqrt($1)');
+  s = s.replace(/\\(?:text|mathrm|mathit|mathbf|operatorname|textrm|textit|mbox)\s*\{([^{}]*)\}/g, ' $1');
+  s = s.replace(/\^\s*\{?\s*\\circ\s*\}?/g, '°');
+  s = s.replace(/\\([A-Za-z]+)/g, (m, name: string) => LATEX_SYMBOLS[name] ?? (/^(quad|qquad|,|;|!|:)$/.test(name) ? ' ' : name === 'mathrm' ? '' : m.slice(1)));
+  s = s.replace(/\\[,;:! ]/g, ' ').replace(/\\%/g, '%').replace(/~/g, ' ');
+  s = s.replace(/\^\s*\{([^{}]*)\}/g, '^$1').replace(/_\s*\{([^{}]*)\}/g, '_$1');
+  s = s.replace(/[{}]/g, '');
+  // unit glued after a space inside \text{ m} etc: "75  mm" → "75 mm"
+  s = s.replace(/[ \t]{2,}/g, ' ');
+  return s;
+}
+
 export function normaliseText(src: string): string {
-  let s = src.replace(/\r/g, '');
+  let s = latexToText(src.replace(/\r/g, ''));
   s = s.replace(/[‐‑‒–—−]/g, '-').replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
   s = s.replace(/ | | /g, ' ');
   // "2.5 × 10^3", "2.5 x 10^-3", "2.5×10³", "2.5 * 10^3"
-  s = s.replace(/(\d*\.?\d+)\s*[×x*]\s*10\s*(?:\^\s*\(?\s*([-+]?\d+)\s*\)?|([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+))/g, (_m, mant: string, e1?: string, e2?: string) => {
+  s = s.replace(/(\d*\.?\d+)\s*[×x*]\s*10\s*(?:\^\s*\(?\s*([-+]?\d+)(?:\s*\))?|([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+))/g, (_m, mant: string, e1?: string, e2?: string) => {
     const e = e1 ?? (e2 ?? '').split('').map((c) => SUPERSCRIPT[c]).join('');
     return `${mant}e${e}`;
   });

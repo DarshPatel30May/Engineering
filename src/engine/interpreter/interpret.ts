@@ -243,6 +243,33 @@ const TARGET_PATTERNS: [RegExp, string][] = [
   [/^\s*(?:the\s+)?(?:number of (?:bolts|rivets|pins|screws))/, 'nFasteners'],
 ];
 
+/** Plain-letter form of a formula side, for matching a stated formula ("Use: σ = My/I") to the library. */
+function letters(expr: string): string {
+  return expr
+    .replace(/\\(?:t|d)?frac|\\left|\\right|\\times|\\cdot|\\sqrt|\\tfrac/g, '')
+    .replace(/\\(sigma|varepsilon|mu|eta|rho|lambda|theta|phi|gamma|tau|omega|Delta|alpha|pi)/g, (_m, g: string) => ({ sigma: 'σ', varepsilon: 'ε', mu: 'μ', eta: 'η', rho: 'ρ', lambda: 'λ', theta: 'θ', phi: 'φ', gamma: 'γ', tau: 'τ', omega: 'ω', Delta: 'Δ', alpha: 'α', pi: 'π' } as Record<string, string>)[g] ?? g)
+    .replace(/_\{[^}]*\}|_[A-Za-z0-9]/g, '')
+    .replace(/[^A-Za-zσεμηρλθφγτωΔαπ]/g, '')
+    .split('')
+    .sort()
+    .join('');
+}
+
+/** "Use: σ = My/I" (no explicit question) → the subject of that formula is the unknown. */
+export function useFormulaTarget(norm: string): string | null {
+  const m = /\buse\s*:?\s*([A-Za-zσεμηρλθφγτωΔα][A-Za-z0-9_]{0,4})\s*=\s*([^\n.;]+)/i.exec(norm);
+  if (!m) return null;
+  const lhs = m[1];
+  const rhs = letters(m[2]);
+  for (const f of FORMULAS) {
+    const [l, r] = f.equation.split('=');
+    if (!r) continue;
+    const fl = letters(l);
+    if (fl === letters(lhs) && letters(r) === rhs) return f.vars[0].concept;
+  }
+  return null;
+}
+
 export function findTargets(norm: string, assigned: Set<string>, modules: ModuleId[]): string[] {
   const lower = norm.toLowerCase();
   const targets: string[] = [];
@@ -453,7 +480,15 @@ export function interpret(text: string): Interpretation {
   }
   applyPairRules(quantities, normalised, lower);
   const assignedSet = new Set(quantities.map((q) => q.concept).filter(Boolean) as string[]);
-  const targets = findTargets(normalised, assignedSet, modules).map((t) => (flags.slideOnset && (t === 'incline' || t === 'theta') ? 'phi' : t));
+  const found = findTargets(normalised, assignedSet, modules);
+  if (!found.length) {
+    const u = useFormulaTarget(normalised);
+    if (u) {
+      found.push(u);
+      notes.push('No explicit question found — solving for the subject of the formula you said to use.');
+    }
+  }
+  const targets = found.map((t) => (flags.slideOnset && (t === 'incline' || t === 'theta') ? 'phi' : t));
   // antenna type
   if (targets.includes('antennaLength')) notes.push(flags.quarterWave ? 'Quarter-wave antenna: L = λ/4.' : 'Assuming a half-wave dipole: L = λ/2.');
 
